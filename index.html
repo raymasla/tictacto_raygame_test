@@ -2,56 +2,136 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firebase 多功能連線棋盤 (加強版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Firebase 遊戲大廳：人數統計與勝利特效版</title>
     <style>
-        body { font-family: 'PingFang TC', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; }
-        .hidden { display: none; }
+        /* --- 通用樣式 --- */
+        body { font-family: 'PingFang TC', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: manipulation; transition: background 0.5s; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; margin-bottom: 20px; position: relative; z-index: 10; }
+        .hidden { display: none !important; }
         
-        /* 按鈕樣式 */
+        /* 按鈕與列表 */
         .menu-btn { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; background: #007bff; color: white; transition: 0.2s; }
         .menu-btn:hover { background: #0056b3; }
+        .btn-c4 { background: #2c3e50; } 
+        .btn-c4:hover { background: #1a252f; }
         .btn-red { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-left: 5px;}
         .btn-green { background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
         
-        /* 列表樣式 */
         .room-item { border: 1px solid #ddd; padding: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; background: #fafafa; }
         .room-info { text-align: left; display: flex; flex-direction: column; }
         .room-name { font-weight: bold; font-size: 1.1em; }
         .room-meta { font-size: 0.85em; color: #666; }
-        
-        /* 輸入框樣式 */
+        .user-count-badge { font-size: 0.8em; background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 10px; margin-left: 5px; font-weight: bold;}
+
+        /* 輸入框 */
         input { padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
         .input-group { margin: 10px 0; text-align: left; }
         .input-group label { display: inline-block; width: 100px; font-weight: bold;}
         .input-group input { width: calc(100% - 120px); box-sizing: border-box;}
 
-        /* 動態棋盤 */
-        #gameBoard { display: grid; gap: 5px; margin: 20px auto; background: #ccc; padding: 5px; border-radius: 5px; }
-        .cell { background: white; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
-        .cell:hover { background: #f0f0f0; }
-        #status { font-weight: bold; color: #d9534f; margin: 10px 0; }
+        /* --- 遊戲區塊 --- */
+        #status { font-weight: bold; color: #d9534f; margin: 10px 0; min-height: 24px; position: relative; z-index: 20;}
+        #roomDisplayInfo { margin-bottom: 5px; transition: color 0.3s;}
+
+        /* --- 圈圈叉叉 (TTT) --- */
+        #ttt-board { display: grid; gap: 5px; margin: 20px auto; background: #ccc; padding: 5px; border-radius: 5px; }
+        .ttt-cell { background: white; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; }
+
+        /* --- 四連棋 (Connect 4) --- */
+        :root { --c4-cell-size: clamp(35px, 9vw, 50px); --c4-gap: 5px; }
+
+        #c4-game-wrapper {
+            display: flex; flex-direction: column; align-items: center;
+            background-color: rgba(44, 62, 80, 0.9); /* 預設深色半透明 */
+            padding: 15px; border-radius: 10px; margin-top: 10px;
+            touch-action: none; transition: background-color 0.5s;
+        }
+
+        .c4-board {
+            display: grid;
+            grid-template-columns: repeat(7, var(--c4-cell-size));
+            grid-template-rows: repeat(6, var(--c4-cell-size));
+            gap: var(--c4-gap);
+            padding: 10px;
+            background: linear-gradient(145deg, #3498db, #2980b9);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .c4-cell {
+            width: var(--c4-cell-size); height: var(--c4-cell-size);
+            background-color: #1a252f; border-radius: 50%;
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.5);
+            position: relative; overflow: hidden;
+        }
+
+        .piece {
+            width: 100%; height: 100%; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem; color: rgba(0,0,0,0.2);
+            animation: dropAnim 0.5s cubic-bezier(0.2, 0.5, 0.3, 1.2) forwards;
+        }
+        .piece::after { content: "★"; }
+
+        /* 玩家顏色 */
+        .p1 { background: radial-gradient(circle at 30% 30%, #ff4d4d, #b30000); }
+        .p2 { background: radial-gradient(circle at 30% 30%, #ffd93d, #d4a017); }
+
+        @keyframes dropAnim { from { transform: translateY(var(--drop-dist)); } to { transform: translateY(0); } }
+
+        /* 拖曳中的棋子 */
+        #drag-piece {
+            position: fixed; width: var(--c4-cell-size); height: var(--c4-cell-size);
+            border-radius: 50%; display: none; pointer-events: none; z-index: 9999;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* --- 勝利特效與遮罩 --- */
+        #win-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; display: flex; justify-content: center; align-items: center;
+            z-index: 100;
+        }
+        .win-text {
+            font-size: 4rem; font-weight: 900; color: white;
+            text-shadow: 0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5);
+            transform: scale(0); opacity: 0;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-align: center;
+            padding: 20px; border-radius: 20px;
+        }
+        .win-text.show { transform: scale(1); opacity: 1; }
+
+        /* 勝利背景變色 (覆蓋 body 背景) */
+        body.win-bg-p1 { background-color: #7c1313; } /* 暗紅色 */
+        body.win-bg-p2 { background-color: #8a6d0b; } /* 暗黃色 */
+        
+        /* 勝利時棋盤容器背景 */
+        .c4-win-wrapper-p1 { background-color: rgba(255, 0, 0, 0.3) !important; box-shadow: 0 0 30px #ff4d4d; }
+        .c4-win-wrapper-p2 { background-color: rgba(255, 215, 0, 0.3) !important; box-shadow: 0 0 30px #ffd93d; }
+
     </style>
 </head>
 <body>
 
 <div id="mainMenu" class="container">
-    <h1>遊戲大廳</h1>
-    <button class="menu-btn" onclick="showSection('gameModeSelect')">圈圈叉叉</button>
-    <button class="menu-btn" style="background:#6c757d">四連棋 (開發中)</button>
+    <h1>Firebase 遊戲大廳</h1>
+    <button class="menu-btn" onclick="prepareRoomList('ttt')">圈圈叉叉</button>
+    <button class="menu-btn btn-c4" onclick="prepareRoomList('c4')">四連棋 (拖曳版)</button>
 </div>
 
-<div id="gameModeSelect" class="container hidden">
-    <h2>圈圈叉叉</h2>
-    <button class="menu-btn" onclick="showSection('createRoomSection')">創立新房間</button>
-    <button class="menu-btn" onclick="listRooms()">加入現有房間</button>
+<div id="roomListSection" class="container hidden">
+    <h3 id="listTitle">房間列表</h3>
+    <div id="roomsContainer">正在搜尋...</div>
+    <hr>
+    <button class="menu-btn" onclick="showCreateRoom()">創立新房間</button>
     <button onclick="showSection('mainMenu')">回主選單</button>
 </div>
 
 <div id="createRoomSection" class="container hidden">
-    <h3>創立房間設定</h3>
-    
+    <h3>創立房間</h3>
     <div class="input-group">
         <label>房間名稱:</label>
         <input type="text" id="roomName" placeholder="未命名房間">
@@ -61,41 +141,47 @@
         <input type="password" id="roomPass" placeholder="留空則公開">
     </div>
     <hr>
-    <div class="input-group">
-        <label>棋盤大小 (N):</label>
-        <input type="number" id="boardN" value="3" min="3" max="10">
+    <div id="tttOptions">
+        <div class="input-group"><label>大小 (N):</label><input type="number" id="boardN" value="3" min="3" max="10"></div>
+        <div class="input-group"><label>目標 (K):</label><input type="number" id="goalK" value="3" min="3"></div>
     </div>
-    <div class="input-group">
-        <label>連線目標 (K):</label>
-        <input type="number" id="goalK" value="3" min="3">
-    </div>
+    <div id="c4Options" class="hidden"><p style="color:#666">四連棋：7x6 (4連線)</p></div>
     <div class="input-group">
         <label>人數 (1-8):</label>
         <input type="number" id="maxP" value="2" min="1" max="8">
     </div>
-
-    <button class="menu-btn" onclick="createRoom()">確認創立並進入</button>
-    <button onclick="showSection('gameModeSelect')">返回</button>
+    <button class="menu-btn" onclick="createRoom()">確認創立</button>
+    <button onclick="showSection('roomListSection')">返回</button>
 </div>
 
-<div id="roomListSection" class="container hidden">
-    <h3>房間列表</h3>
-    <div id="roomsContainer">正在搜尋房間...</div>
-    <button onclick="showSection('gameModeSelect')">返回</button>
-</div>
-
-<div id="gameArea" class="container hidden">
+<div id="gameArea" class="container hidden" style="max-width: 500px;">
     <h3 id="roomDisplayInfo"></h3>
+    <p style="margin:0; font-size:0.9em; color:#666">在線人數: <span id="inRoomCount" style="font-weight:bold; color:#007bff">1</span></p>
     <div id="status">載入中...</div>
-    <div id="gameBoard"></div>
-    <button onclick="resetGame()">重新開始</button>
-    <button onclick="location.reload()">離開房間</button>
+
+    <div id="ttt-board" class="hidden"></div>
+
+    <div id="c4-game-wrapper" class="hidden">
+        <div style="display:flex; justify-content:center; gap:10px; color:white; margin-bottom:10px;">
+            <span>輪到:</span><div id="c4-indicator" class="indicator p1" style="width:24px; height:24px; border-radius:50%; border:2px solid white;"></div>
+        </div>
+        <div id="c4-board" class="c4-board"></div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <button onclick="resetGame()">重新開始</button>
+        <button onclick="leaveRoom()">離開房間</button>
+    </div>
 </div>
+
+<div id="drag-piece"></div>
+
+<div id="win-overlay"><div class="win-text" id="win-text-content"></div></div>
 
 <script type="module">
-    // 加入 get 和 remove 模組
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, push, update, get, remove } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    // 引入 onDisconnect 模組
+    import { getDatabase, ref, set, onValue, push, update, get, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyC7PZLTTNf17cfp9gCHudWiWX8SYPSCdDI",
@@ -109,160 +195,336 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    let currentRoomId = null;
 
-    // --- 切換畫面 ---
+    let currentRoomId = null;
+    let selectedGameType = 'ttt';
+    let roomDataCache = null;
+    let currentUserRef = null; // 用來記錄自己的在線狀態節點
+
+    // 拖曳相關
+    const dragPieceEl = document.getElementById('drag-piece');
+    let isDragging = false;
+    let dragPlayer = 1;
+
+    // --- 畫面切換 ---
     window.showSection = (id) => {
         document.querySelectorAll('.container').forEach(c => c.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
+        dragPieceEl.style.display = 'none';
+        removeDragEvents();
+        clearWinEffect(); // 清除勝利特效
     };
 
-    // --- 創立房間 ---
+    // --- 列表準備 ---
+    window.prepareRoomList = (type) => {
+        selectedGameType = type;
+        const titleMap = { 'ttt': '圈圈叉叉', 'c4': '四連棋' };
+        document.getElementById('listTitle').innerText = `${titleMap[type]} - 房間列表`;
+        listRooms();
+    };
+
+    window.showCreateRoom = () => {
+        showSection('createRoomSection');
+        if (selectedGameType === 'ttt') {
+            document.getElementById('tttOptions').classList.remove('hidden');
+            document.getElementById('c4Options').classList.add('hidden');
+        } else {
+            document.getElementById('tttOptions').classList.add('hidden');
+            document.getElementById('c4Options').classList.remove('hidden');
+        }
+    };
+
     window.createRoom = () => {
-        const nameInput = document.getElementById('roomName').value.trim();
-        const passInput = document.getElementById('roomPass').value.trim();
-        const n = parseInt(document.getElementById('boardN').value);
-        const k = parseInt(document.getElementById('goalK').value);
-        const max = parseInt(document.getElementById('maxP').value);
+        const roomName = document.getElementById('roomName').value.trim() || `房間 ${Math.floor(Math.random()*1000)}`;
+        const max = parseInt(document.getElementById('maxP').value) || 2;
         
-        // 如果沒填名字，給預設值
-        const roomName = nameInput || `房間 ${Math.floor(Math.random()*1000)}`;
+        let n, k, board;
+        if (selectedGameType === 'c4') {
+            n = 7; k = 4; board = Array(n * 6).fill(0);
+        } else {
+            n = parseInt(document.getElementById('boardN').value);
+            k = parseInt(document.getElementById('goalK').value);
+            board = Array(n * n).fill("");
+        }
 
-        const roomRef = push(ref(db, 'rooms')); 
-        const roomId = roomRef.key;
-
+        const roomRef = push(ref(db, 'rooms'));
         set(roomRef, {
+            type: selectedGameType,
             name: roomName,
-            password: passInput, // 儲存密碼 (注意：前端明文儲存僅供簡易娛樂使用)
+            password: document.getElementById('roomPass').value.trim(),
             n, k, max,
-            board: Array(n*n).fill(""),
+            board: board,
             turn: 0,
             symbols: ["O", "X", "△", "□", "★", "◇", "◆", "▲"]
-        }).then(() => enterRoom(roomId));
+        }).then(() => enterRoom(roomRef.key));
     };
 
-    // --- 列出房間 ---
+    // --- 列表顯示 (含人數) ---
     window.listRooms = () => {
         showSection('roomListSection');
         onValue(ref(db, 'rooms'), (snapshot) => {
             const container = document.getElementById('roomsContainer');
             container.innerHTML = "";
             const rooms = snapshot.val();
+            if (!rooms) { container.innerHTML = "<p>無房間</p>"; return; }
             
-            if (!rooms) { container.innerHTML = "<p>目前沒人創房，快去開一間！</p>"; return; }
-            
-            for (let id in rooms) {
-                const r = rooms[id];
-                const isLocked = r.password ? "🔒" : "👐"; // 鎖頭圖示
+            Object.entries(rooms).reverse().forEach(([id, r]) => {
+                const rType = r.type || 'ttt';
+                if (rType !== selectedGameType) return;
+
+                // 計算人數 (user 節點的 key 數量)
+                const userCount = r.users ? Object.keys(r.users).length : 0;
                 
+                const typeTag = rType === 'c4' ? '<span style="background:#2c3e50; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em">連棋</span>' : '<span style="background:#007bff; color:white; padding:2px 4px; border-radius:3px; font-size:0.7em">圈叉</span>';
+                const lockIcon = r.password ? "🔒" : "";
+
                 const div = document.createElement('div');
                 div.className = 'room-item';
                 div.innerHTML = `
                     <div class="room-info">
-                        <span class="room-name">${r.name} ${isLocked}</span>
-                        <span class="room-meta">${r.n}x${r.n} | 目標:${r.k} | ID:${id.substring(0,4)}</span>
+                        <span class="room-name">${typeTag} ${r.name} ${lockIcon} <span class="user-count-badge">👤 ${userCount}人</span></span>
+                        <span class="room-meta">ID:${id.substring(0,4)} | 目標:${r.k}</span>
                     </div>
                     <div>
                         <button class="btn-green" onclick="checkPasswordAndEnter('${id}')">進入</button>
                         <button class="btn-red" onclick="deleteRoom('${id}')">刪除</button>
                     </div>`;
                 container.appendChild(div);
-            }
+            });
         });
     };
 
-    // --- 檢查密碼邏輯 ---
     window.checkPasswordAndEnter = (id) => {
-        // 先讀取一次該房間資料來檢查密碼
-        get(ref(db, 'rooms/' + id)).then((snapshot) => {
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                if (data.password && data.password !== "") {
-                    // 有密碼，跳出輸入框
-                    const inputPass = prompt(`房間「${data.name}」需要密碼：`);
-                    if (inputPass === data.password) {
-                        enterRoom(id);
-                    } else {
-                        alert("密碼錯誤！");
-                    }
-                } else {
-                    // 沒密碼，直接進
-                    enterRoom(id);
-                }
-            } else {
-                alert("房間已不存在");
-            }
+        get(ref(db, 'rooms/' + id)).then((s) => {
+            if (!s.exists()) return alert("不存在");
+            const data = s.val();
+            if (data.password) {
+                if (prompt(`密碼：`) === data.password) enterRoom(id);
+                else alert("錯誤");
+            } else enterRoom(id);
         });
     };
 
-    // --- 刪除房間 ---
-    window.deleteRoom = (id) => {
-        if(confirm("確定要刪除這個房間嗎？")) {
-            remove(ref(db, 'rooms/' + id))
-                .then(() => alert("房間已刪除"))
-                .catch((error) => alert("刪除失敗: " + error.message));
-        }
-    };
+    window.deleteRoom = (id) => confirm("刪除？") && remove(ref(db, 'rooms/' + id));
 
-    // --- 進入房間並監聽 ---
+    // --- 進入房間 (含在線統計) ---
     window.enterRoom = (id) => {
         currentRoomId = id;
         showSection('gameArea');
-        
+        clearWinEffect();
+
+        // 1. 處理「我進入了房間」的在線狀態
+        const myUserRef = push(ref(db, `rooms/${id}/users`));
+        set(myUserRef, true); // 寫入一個佔位符
+        onDisconnect(myUserRef).remove(); // 斷線時刪除
+        currentUserRef = myUserRef; // 存起來，按離開按鈕時也要刪
+
         onValue(ref(db, 'rooms/' + id), (snapshot) => {
             const data = snapshot.val();
-            // 如果房間被刪除， data 會變成 null
-            if (!data) {
-                alert("房間已被刪除或不存在！");
-                showSection('roomListSection'); // 強制踢回列表
-                return;
-            }
+            if (!data) { alert("房間已刪除"); leaveRoom(); return; }
+            roomDataCache = data;
 
-            document.getElementById('roomDisplayInfo').innerText = `${data.name} (ID: ${id.substring(0,4)})`;
-            renderBoard(data);
+            // 更新人數顯示
+            const count = data.users ? Object.keys(data.users).length : 0;
+            document.getElementById('inRoomCount').innerText = `${count} 人`;
+
+            document.getElementById('roomDisplayInfo').innerText = `${data.name} (${id.substring(0,4)})`;
+
+            if (data.type === 'c4') {
+                setupC4Mode();
+                renderConnect4(data);
+                addDragEvents();
+            } else {
+                setupTTTMode();
+                renderTTT(data);
+            }
         });
     };
 
-    function renderBoard(data) {
-        const boardDiv = document.getElementById('gameBoard');
-        boardDiv.style.gridTemplateColumns = `repeat(${data.n}, 1fr)`;
-        boardDiv.innerHTML = "";
-        
-        const currentSymbol = data.symbols[data.turn % data.max];
-        document.getElementById('status').innerText = `輪到玩家: ${currentSymbol}`;
+    // --- 離開房間邏輯 ---
+    window.leaveRoom = () => {
+        // 手動刪除自己的在線紀錄
+        if (currentUserRef) remove(currentUserRef);
+        // 重整頁面清除所有監聽
+        location.reload();
+    };
 
+    function setupC4Mode() {
+        document.getElementById('ttt-board').classList.add('hidden');
+        document.getElementById('c4-game-wrapper').classList.remove('hidden');
+        document.getElementById('roomDisplayInfo').style.color = "white";
+        // 預設背景 (如果沒贏)
+        if(!document.body.classList.contains('win-bg-p1') && !document.body.classList.contains('win-bg-p2')) {
+             document.body.style.backgroundColor = "#2c3e50";
+        }
+    }
+
+    function setupTTTMode() {
+        document.getElementById('c4-game-wrapper').classList.add('hidden');
+        document.getElementById('ttt-board').classList.remove('hidden');
+        document.body.style.backgroundColor = "#f0f2f5";
+        document.getElementById('roomDisplayInfo').style.color = "black";
+    }
+
+    function renderTTT(data) {
+        const b = document.getElementById('ttt-board');
+        b.style.gridTemplateColumns = `repeat(${data.n}, 1fr)`;
+        b.innerHTML = "";
+        const sym = data.symbols[data.turn % data.max];
+        document.getElementById('status').innerText = `輪到: ${sym}`;
         data.board.forEach((cell, i) => {
-            const div = document.createElement('div');
-            div.className = 'cell';
-            div.innerText = cell;
-            div.onclick = () => {
-                if (data.board[i] !== "") return;
-                const newBoard = [...data.board];
-                newBoard[i] = currentSymbol;
-                update(ref(db, 'rooms/' + currentRoomId), {
-                    board: newBoard,
-                    turn: data.turn + 1
-                });
+            const d = document.createElement('div');
+            d.className = 'ttt-cell';
+            d.innerText = cell;
+            d.onclick = () => {
+                if(data.board[i]==="") update(ref(db,`rooms/${currentRoomId}`), {board:Object.assign([...data.board],{[i]:sym}), turn:data.turn+1});
             };
-            boardDiv.appendChild(div);
+            b.appendChild(d);
         });
     }
 
-    window.resetGame = () => {
-        onValue(ref(db, 'rooms/' + currentRoomId), (snapshot) => {
-            const data = snapshot.val();
-            if (!data) return;
-            update(ref(db, 'rooms/' + currentRoomId), {
-                board: Array(data.n * data.n).fill(""),
-                turn: 0
-            });
-        }, { onlyOnce: true });
+    // --- 四連棋渲染與勝利邏輯 ---
+    function renderConnect4(data) {
+        const boardDiv = document.getElementById('c4-board');
+        boardDiv.innerHTML = "";
+        const player = (data.turn % data.max) + 1;
+        dragPlayer = player;
+
+        // 更新指示器
+        document.getElementById('status').innerText = `輪到玩家 ${player}`;
+        document.getElementById('c4-indicator').className = `indicator p${player}`;
+        dragPieceEl.className = `p${player}`;
+
+        // 檢查勝利
+        const winner = checkWinC4(data.board, 6, 7);
+        if (winner > 0) {
+            showWinEffect(winner);
+            document.getElementById('status').innerText = ""; // 隱藏輪流文字
+        } else {
+            // 如果沒人贏，恢復背景 (防止重置遊戲後背景卡住)
+            clearWinEffect();
+            document.body.style.backgroundColor = "#2c3e50";
+        }
+
+        // 繪製
+        for(let r=0; r<6; r++) {
+            for(let c=0; c<7; c++) {
+                const val = data.board[r*7+c];
+                const cell = document.createElement('div');
+                cell.className = 'c4-cell';
+                if(val !== 0) {
+                    const p = document.createElement('div');
+                    p.style.setProperty('--drop-dist', `${-((r+2)*60)}px`);
+                    p.className = `piece p${val}`;
+                    cell.appendChild(p);
+                }
+                boardDiv.appendChild(cell);
+            }
+        }
+    }
+
+    // --- 勝利特效 ---
+    function showWinEffect(player) {
+        const body = document.body;
+        const wrapper = document.getElementById('c4-game-wrapper');
+        const textOverlay = document.getElementById('win-text-content');
+        const overlay = document.querySelector('.win-text');
+
+        // 設定文字
+        textOverlay.innerHTML = `🏆<br>玩家 ${player}<br>獲勝！`;
+        overlay.classList.add('show');
+
+        // 設定背景與區塊顏色
+        if (player === 1) {
+            body.className = 'win-bg-p1'; // CSS 控制背景紅
+            wrapper.classList.add('c4-win-wrapper-p1');
+        } else {
+            body.className = 'win-bg-p2'; // CSS 控制背景黃
+            wrapper.classList.add('c4-win-wrapper-p2');
+        }
+    }
+
+    function clearWinEffect() {
+        document.body.className = '';
+        document.getElementById('c4-game-wrapper').className = ''; // 清除 wrapper 的 win class
+        document.querySelector('.win-text').classList.remove('show');
+    }
+
+    // 檢查四連棋勝利 (回傳 0 或 1 或 2)
+    function checkWinC4(board, R, C) {
+        const get = (r,c) => (r<0||r>=R||c<0||c>=C) ? 0 : board[r*C+c];
+        for(let r=0; r<R; r++) {
+            for(let c=0; c<C; c++) {
+                let p = get(r,c);
+                if(p===0) continue;
+                const dirs = [[0,1],[1,0],[1,1],[1,-1]];
+                for(let [dr,dc] of dirs) {
+                    if(get(r+dr,c+dc)===p && get(r+dr*2,c+dc*2)===p && get(r+dr*3,c+dc*3)===p) return p;
+                }
+            }
+        }
+        return 0;
+    }
+
+    // --- 拖曳邏輯 ---
+    function handleDrop(x) {
+        if(!roomDataCache || roomDataCache.type!=='c4') return;
+        // 如果已經有人贏了，禁止下棋
+        if (checkWinC4(roomDataCache.board, 6, 7) > 0) return;
+
+        const rect = document.getElementById('c4-board').getBoundingClientRect();
+        const col = Math.floor((x - rect.left) / (rect.width/7));
+        if(col<0 || col>=7) return;
+
+        const newBoard = [...roomDataCache.board];
+        for(let r=5; r>=0; r--) {
+            if(newBoard[r*7+col]===0) {
+                newBoard[r*7+col] = dragPlayer;
+                update(ref(db, `rooms/${currentRoomId}`), { board: newBoard, turn: roomDataCache.turn+1 });
+                break;
+            }
+        }
+    }
+
+    const onMove = (e) => {
+        if(!isDragging) return;
+        const t = e.touches ? e.touches[0] : e;
+        dragPieceEl.style.left = (t.clientX - dragPieceEl.offsetWidth/2)+'px';
+        dragPieceEl.style.top = (t.clientY - dragPieceEl.offsetHeight/2)+'px';
+    };
+    const onStart = (e) => {
+        const w = document.getElementById('c4-game-wrapper');
+        if(!w || w.classList.contains('hidden') || !w.contains(e.target)) return;
+        // 勝利後禁止拖曳
+        if(document.querySelector('.win-text').classList.contains('show')) return;
+
+        isDragging=true; dragPieceEl.style.display='flex';
+        onMove(e); e.preventDefault();
+    };
+    const onEnd = (e) => {
+        if(!isDragging) return;
+        isDragging=false; dragPieceEl.style.display='none';
+        handleDrop(e.changedTouches ? e.changedTouches[0].clientX : e.clientX);
     };
 
-    // 把這些 function 掛載到 window 讓 HTML onclick 找得到
+    function addDragEvents() {
+        ['mousedown','touchstart'].forEach(e=>window.addEventListener(e, onStart, {passive:false}));
+        ['mousemove','touchmove'].forEach(e=>window.addEventListener(e, onMove, {passive:false}));
+        ['mouseup','touchend'].forEach(e=>window.addEventListener(e, onEnd, {passive:false}));
+    }
+    function removeDragEvents() {
+        // 這裡省略移除邏輯以簡化代碼，因 showSection 會隱藏拖曳元素，實際影響不大
+    }
+
+    window.resetGame = () => {
+        if(!roomDataCache) return;
+        let nb = roomDataCache.type==='c4' ? Array(42).fill(0) : Array(roomDataCache.n**2).fill("");
+        update(ref(db, `rooms/${currentRoomId}`), { board: nb, turn: 0 });
+    };
+
+    // Global
     window.checkPasswordAndEnter = checkPasswordAndEnter;
     window.deleteRoom = deleteRoom;
-
 </script>
 </body>
 </html>
