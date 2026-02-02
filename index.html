@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Firebase 遊戲大廳：完整功能版</title>
+    <title>自定義棋盤連線遊戲</title>
     <style>
         /* --- 通用樣式 --- */
         body { font-family: 'PingFang TC', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: manipulation; transition: background 0.5s; }
@@ -25,12 +25,20 @@
         .room-item { border: 1px solid #ddd; padding: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; background: #fafafa; }
         .room-info { text-align: left; display: flex; flex-direction: column; }
         .room-name { font-weight: bold; font-size: 1.1em; }
+        .lock-icon { font-size: 0.8em; margin-left: 5px; color: #d9534f; }
+        .room-meta { font-size: 0.75em; color: #888; margin-top: 2px; }
         
         /* 輸入框 */
         input { padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-        .input-group { margin: 10px 0; text-align: left; }
-        .input-group label { display: inline-block; width: 100px; font-weight: bold;}
-        .input-group input { width: calc(100% - 120px); box-sizing: border-box;}
+        .input-group { margin: 10px 0; text-align: left; display: flex; align-items: center; justify-content: space-between; }
+        .input-group label { font-weight: bold; width: 80px;}
+        .input-group input { flex: 1; }
+        
+        /* 設定數字輸入框的小樣式 */
+        .settings-row { display: flex; gap: 10px; margin: 10px 0; }
+        .settings-item { flex: 1; display: flex; flex-direction: column; }
+        .settings-item label { font-size: 0.8em; color: #555; margin-bottom: 3px; font-weight: bold; }
+        .settings-item input { width: 100%; box-sizing: border-box; }
 
         /* --- 遊戲區塊 --- */
         #status { font-weight: bold; color: #d9534f; margin: 10px 0; min-height: 24px; }
@@ -46,18 +54,30 @@
         .editable-name:hover { color: #0056b3; border-bottom-style: solid; }
 
         /* --- 四連棋樣式 --- */
-        :root { --c4-cell-size: clamp(35px, 9vw, 50px); }
-        #c4-game-wrapper { display: flex; flex-direction: column; align-items: center; background-color: rgba(44, 62, 80, 0.9); padding: 15px; border-radius: 10px; transition: 0.5s; }
-        .c4-board { display: grid; grid-template-columns: repeat(7, var(--c4-cell-size)); grid-template-rows: repeat(6, var(--c4-cell-size)); gap: 5px; padding: 10px; background: #3498db; border-radius: 10px; }
+        :root { 
+            /* 注意：這裡的 cell size 之後會用 JS 動態覆蓋，或者用 Grid 自動調整 */
+            --c4-cell-size: 40px; 
+            --p1-color: #ff4d4d;
+            --p2-color: #ffd93d;
+        }
+        #c4-game-wrapper { display: flex; flex-direction: column; align-items: center; background-color: rgba(44, 62, 80, 0.9); padding: 15px; border-radius: 10px; transition: 0.5s; max-width: 100%; overflow-x: auto; }
+        /* 這裡的 columns 和 rows 會由 JS 動態注入 inline style */
+        .c4-board { display: grid; gap: 5px; padding: 10px; background: #3498db; border-radius: 10px; margin: 0 auto; }
         .c4-cell { width: var(--c4-cell-size); height: var(--c4-cell-size); background-color: #1a252f; border-radius: 50%; position: relative; }
-        .piece { width: 100%; height: 100%; border-radius: 50%; animation: dropAnim 0.5s forwards; }
-        .p1 { background: radial-gradient(circle at 30% 30%, #ff4d4d, #b30000); }
-        .p2 { background: radial-gradient(circle at 30% 30%, #ffd93d, #d4a017); }
+        .piece { width: 100%; height: 100%; border-radius: 50%; animation: dropAnim 0.5s forwards; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3); }
+        
+        .p1 { background: var(--p1-color); }
+        .p2 { background: var(--p2-color); }
+        
         @keyframes dropAnim { from { transform: translateY(-200px); } to { transform: translateY(0); } }
 
-        /* --- 圈圈叉叉 --- */
-        #ttt-board { display: grid; gap: 5px; margin: 10px auto; background: #ccc; padding: 5px; border-radius: 5px; }
-        .ttt-cell { background: white; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer;}
+        .color-pickers { margin-bottom: 10px; display: flex; gap: 10px; justify-content: center; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 8px; }
+        .color-label { color: white; font-size: 0.8em; display: flex; align-items: center; gap: 5px; }
+        input[type="color"] { border: none; width: 30px; height: 30px; padding: 0; cursor: pointer; background: none; }
+
+        /* --- 圈圈叉叉 (通用棋盤) --- */
+        #ttt-board { display: grid; gap: 5px; margin: 10px auto; background: #ccc; padding: 5px; border-radius: 5px; max-width: 100%; overflow-x: auto;}
+        .ttt-cell { background: white; min-width: 40px; min-height: 40px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer;}
 
         /* --- 勝利特效 & 巨大按鈕 --- */
         #win-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; }
@@ -68,27 +88,54 @@
 <body>
 
 <div id="mainMenu" class="container">
-    <h1>Firebase 遊戲大廳</h1>
+    <h1>自定義線上遊戲</h1>
     <div id="allRoomsContainer">搜尋中...</div>
     <hr>
-    <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 圈圈叉叉</button>
-    <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋</button>
+    <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 棋盤連線 (圈圈叉叉/五子棋)</button>
+    <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 (重力落下)</button>
 </div>
 
 <div id="createRoomSection" class="container hidden">
     <h3 id="createTitle">創立房間</h3>
+    
     <div class="input-group"><label>房間名稱:</label><input type="text" id="roomName" placeholder="未命名房間"></div>
     <div class="input-group"><label>設定密碼:</label><input type="password" id="roomPass" placeholder="可留空"></div>
+
+    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+    
+    <div style="text-align: left; font-weight: bold; margin-bottom: 5px;">遊戲規則設定:</div>
+    <div class="settings-row">
+        <div class="settings-item">
+            <label>高 (Rows)</label>
+            <input type="number" id="inputRows" min="3" max="15" value="3">
+        </div>
+        <div class="settings-item">
+            <label>寬 (Cols)</label>
+            <input type="number" id="inputCols" min="3" max="15" value="3">
+        </div>
+        <div class="settings-item">
+            <label>連線數</label>
+            <input type="number" id="inputWin" min="3" max="10" value="3">
+        </div>
+    </div>
+    <div style="font-size: 0.8em; color: #d9534f; margin-bottom: 10px;">※ 建議最大 15x15，以免手機畫面太擠</div>
+
     <button class="menu-btn" onclick="createRoom()">確認創立</button>
     <button onclick="showSection('mainMenu')">返回</button>
 </div>
 
 <div id="gameArea" class="container hidden">
     <h3 id="roomDisplayInfo"></h3>
+    <div id="gameMetaInfo" style="font-size: 0.85em; color: #666; margin-bottom: 5px;"></div>
     <div id="status">載入中...</div>
 
     <div id="ttt-board" class="hidden"></div>
+    
     <div id="c4-game-wrapper" class="hidden">
+        <div class="color-pickers">
+            <label class="color-label">P1色: <input type="color" id="p1ColorPicker" value="#ff4d4d"></label>
+            <label class="color-label">P2色: <input type="color" id="p2ColorPicker" value="#ffd93d"></label>
+        </div>
         <div id="c4-board" class="c4-board"></div>
     </div>
 
@@ -132,11 +179,11 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     let currentRoomId = null, selectedGameType = 'ttt', roomDataCache = null;
+    let currentUserKey = null;
     
-    // 預設玩家名稱 (隨機產生一點變化)
     let myName = "玩家" + Math.floor(Math.random() * 100);
 
-    // --- 初始化：顯示所有房間 (包含刪除按鈕) ---
+    // --- 初始化：顯示所有房間 ---
     function initLobby() {
         onValue(ref(db, 'rooms'), (snapshot) => {
             const container = document.getElementById('allRoomsContainer');
@@ -146,17 +193,25 @@
             
             Object.entries(rooms).reverse().forEach(([id, r]) => {
                 const userCount = r.users ? Object.keys(r.users).length : 0;
-                const typeName = r.type === 'c4' ? '🔵四連棋' : '❌圈圈叉叉';
+                const typeName = r.type === 'c4' ? '🔵重力四連' : '❌棋盤連線';
+                const hasPass = r.password && r.password !== "";
+                const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
+                const passwordArg = hasPass ? r.password : ""; 
                 
+                // 顯示棋盤大小資訊 (相容舊版資料)
+                const rows = r.rows || (r.type === 'c4' ? 6 : 3);
+                const cols = r.cols || (r.type === 'c4' ? 7 : 3);
+                const win = r.winCondition || (r.type === 'c4' ? 4 : 3);
+
                 const div = document.createElement('div');
                 div.className = 'room-item';
                 div.innerHTML = `
                     <div class="room-info">
-                        <span class="room-name">${typeName} | ${r.name}</span>
-                        <span style="font-size:0.8em; color:#666">人數: ${userCount}</span>
+                        <span class="room-name">${typeName} | ${r.name} ${lockIcon}</span>
+                        <div class="room-meta">大小: ${rows}x${cols} | 連線: ${win} | 人數: ${userCount}</div>
                     </div>
                     <div>
-                        <button class="btn-sm btn-green" onclick="enterRoom('${id}')">加入</button>
+                        <button class="btn-sm btn-green" onclick="attemptJoin('${id}', '${passwordArg}')">加入</button>
                         <button class="btn-sm btn-red" onclick="deleteRoom('${id}')">刪除</button>
                     </div>`;
                 container.appendChild(div);
@@ -165,44 +220,89 @@
     }
     initLobby();
 
-    // --- 刪除房間功能 ---
+    window.attemptJoin = (id, correctPass) => {
+        if (correctPass && correctPass !== "undefined" && correctPass !== "") {
+            const input = prompt("此房間有密碼，請輸入：");
+            if (input !== correctPass) {
+                alert("密碼錯誤！");
+                return;
+            }
+        }
+        enterRoom(id);
+    };
+
+    const p1Picker = document.getElementById('p1ColorPicker');
+    const p2Picker = document.getElementById('p2ColorPicker');
+    
+    function updateColors() {
+        document.documentElement.style.setProperty('--p1-color', p1Picker.value);
+        document.documentElement.style.setProperty('--p2-color', p2Picker.value);
+    }
+    p1Picker.addEventListener('input', updateColors);
+    p2Picker.addEventListener('input', updateColors);
+
     window.deleteRoom = (id) => {
         if(confirm("確定要永久刪除這個房間嗎？")) {
             remove(ref(db, 'rooms/' + id)).then(() => alert("房間已刪除"));
         }
     };
 
-    // --- 房間管理 ---
+    // --- 房間管理 (修改後支援自定義大小) ---
     window.showCreateRoom = (type) => {
         selectedGameType = type;
-        document.getElementById('createTitle').innerText = `創立 ${type==='c4'?'四連棋':'圈圈叉叉'}`;
+        const title = type === 'c4' ? '創立 四連棋 (重力落下)' : '創立 棋盤連線 (圈圈叉叉)';
+        document.getElementById('createTitle').innerText = title;
+        
+        // 設定預設值
+        if (type === 'c4') {
+            document.getElementById('inputRows').value = 6;
+            document.getElementById('inputCols').value = 7;
+            document.getElementById('inputWin').value = 4;
+        } else {
+            document.getElementById('inputRows').value = 3;
+            document.getElementById('inputCols').value = 3;
+            document.getElementById('inputWin').value = 3;
+        }
+
         showSection('createRoomSection');
     };
 
     window.createRoom = () => {
         const name = document.getElementById('roomName').value || "好玩房間";
         const pass = document.getElementById('roomPass').value;
-        // 創房時不強制改名，直接用目前的 myName
+        
+        // 讀取自定義大小
+        let rows = parseInt(document.getElementById('inputRows').value) || 3;
+        let cols = parseInt(document.getElementById('inputCols').value) || 3;
+        let win = parseInt(document.getElementById('inputWin').value) || 3;
+
+        // 簡單驗證防呆
+        if(rows < 3) rows = 3; if(cols < 3) cols = 3; if(win < 3) win = 3;
+        if(win > Math.max(rows, cols)) { alert("連線數不能大於棋盤長寬！"); return; }
         
         const roomRef = push(ref(db, 'rooms'));
-        const initBoard = selectedGameType === 'c4' ? Array(42).fill(0) : Array(9).fill("");
+        const initBoard = selectedGameType === 'c4' 
+            ? Array(rows * cols).fill(0) 
+            : Array(rows * cols).fill("");
         
         set(roomRef, {
             type: selectedGameType, name, password: pass,
-            board: initBoard, turn: 0, history: [initBoard]
+            board: initBoard, turn: 0, history: [initBoard],
+            // 儲存大小設定
+            rows: rows, cols: cols, winCondition: win
         }).then(() => enterRoom(roomRef.key));
     };
 
     window.enterRoom = (id) => {
         currentRoomId = id;
         showSection('gameArea');
-        document.getElementById('myNameDisplay').innerText = myName; // 顯示目前名稱
+        document.getElementById('myNameDisplay').innerText = myName;
 
         const userRef = push(ref(db, `rooms/${id}/users`));
+        currentUserKey = userRef.key;
         onDisconnect(userRef).remove();
         set(userRef, { name: myName });
 
-        // 監聽房間狀態
         onValue(ref(db, 'rooms/' + id), (snapshot) => {
             const data = snapshot.val();
             if (!data) { alert("房間已被刪除"); leaveRoom(); return; }
@@ -211,7 +311,6 @@
             checkWinner(data);
         });
 
-        // 監聽聊天室
         onValue(ref(db, `rooms/${id}/chat`), (snapshot) => {
             const chatDiv = document.getElementById('chat-msgs');
             chatDiv.innerHTML = "";
@@ -227,37 +326,64 @@
         });
     };
 
-    // --- 暱稱編輯功能 ---
     window.editName = () => {
         const newName = prompt("請輸入您的新暱稱:", myName);
         if (newName && newName.trim() !== "") {
             myName = newName.trim();
             document.getElementById('myNameDisplay').innerText = myName;
-            // 這裡可以選擇更新 Firebase 的 users 列表，但為了簡單起見，我們主要更新聊天發送的名稱
+            
+            if (currentRoomId && currentUserKey) {
+                update(ref(db, `rooms/${currentRoomId}/users/${currentUserKey}`), { name: myName });
+            }
         }
     };
 
-    // --- 遊戲邏輯 ---
+    // --- 遊戲邏輯 (動態渲染) ---
     function renderGame(data) {
         document.getElementById('roomDisplayInfo').innerText = data.name;
+        
+        // 取得動態大小 (如果舊房間沒有資料，使用預設值)
+        const rows = data.rows || (data.type === 'c4' ? 6 : 3);
+        const cols = data.cols || (data.type === 'c4' ? 7 : 3);
+        const win = data.winCondition || (data.type === 'c4' ? 4 : 3);
+
+        document.getElementById('gameMetaInfo').innerText = `規格: ${rows}x${cols} | 目標: ${win}連線`;
+
+        const userList = data.users ? Object.values(data.users) : [];
+        const p1Name = userList[0] ? userList[0].name : "玩家 1";
+        const p2Name = userList[1] ? userList[1].name : "玩家 2";
+        const currentPlayerName = (data.turn % 2 === 0) ? p1Name : p2Name;
+
         if (data.type === 'c4') {
             document.getElementById('ttt-board').classList.add('hidden');
             document.getElementById('c4-game-wrapper').classList.remove('hidden');
             const boardDiv = document.getElementById('c4-board');
+            
+            // 動態設定 Grid
+            boardDiv.style.gridTemplateColumns = `repeat(${cols}, var(--c4-cell-size))`;
+            
+            // 根據格子數量動態調整大小，避免太擠
+            const size = cols > 10 ? '30px' : (cols > 7 ? '35px' : '45px');
+            document.documentElement.style.setProperty('--c4-cell-size', size);
+
             boardDiv.innerHTML = "";
             data.board.forEach((val, i) => {
                 const cell = document.createElement('div');
                 cell.className = 'c4-cell';
                 if(val > 0) cell.innerHTML = `<div class="piece p${val}"></div>`;
-                cell.onclick = () => dropC4(i % 7);
+                // 傳入 cols 以便計算點擊的行
+                cell.onclick = () => dropC4(i % cols, rows, cols);
                 boardDiv.appendChild(cell);
             });
-            document.getElementById('status').innerText = `輪到玩家: ${data.turn % 2 + 1}`;
+            document.getElementById('status').innerText = `輪到: ${currentPlayerName} (${data.turn % 2 === 0 ? '🔴' : '🟡'})`;
         } else {
             document.getElementById('c4-game-wrapper').classList.add('hidden');
             document.getElementById('ttt-board').classList.remove('hidden');
             const boardDiv = document.getElementById('ttt-board');
-            boardDiv.style.gridTemplateColumns = "repeat(3, 1fr)";
+            
+            // 動態設定 Grid
+            boardDiv.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            
             boardDiv.innerHTML = "";
             data.board.forEach((val, i) => {
                 const cell = document.createElement('div');
@@ -266,15 +392,18 @@
                 cell.onclick = () => clickTTT(i);
                 boardDiv.appendChild(cell);
             });
-            document.getElementById('status').innerText = `輪到: ${data.turn % 2 === 0 ? 'X' : 'O'}`;
+            document.getElementById('status').innerText = `輪到: ${currentPlayerName} (${data.turn % 2 === 0 ? 'X' : 'O'})`;
         }
     }
 
-    function dropC4(col) {
+    // 四連棋：重力落下邏輯 (修改支援任意高度)
+    function dropC4(col, rows, cols) {
         const board = [...roomDataCache.board];
-        for (let r = 5; r >= 0; r--) {
-            if (board[r * 7 + col] === 0) {
-                board[r * 7 + col] = (roomDataCache.turn % 2) + 1;
+        // 從最底層 row 開始往上找空位
+        for (let r = rows - 1; r >= 0; r--) {
+            const index = r * cols + col;
+            if (board[index] === 0) {
+                board[index] = (roomDataCache.turn % 2) + 1;
                 updateMove(board);
                 break;
             }
@@ -310,31 +439,101 @@
         });
     };
 
-    // --- 聊天室功能 ---
     window.sendMessage = () => {
         const input = document.getElementById('chatInput');
         if (!input.value.trim()) return;
         push(ref(db, `rooms/${currentRoomId}/chat`), {
-            user: myName, // 使用當前設定的名稱
+            user: myName,
             text: input.value,
             time: serverTimestamp()
         });
         input.value = "";
     };
 
-    // --- 勝利檢測與 UI ---
     function checkWinner(data) {
-        const winner = data.type === 'c4' ? checkWinC4(data.board) : checkWinTTT(data.board);
+        // 取得參數，若舊房間無資料則用預設
+        const rows = data.rows || (data.type === 'c4' ? 6 : 3);
+        const cols = data.cols || (data.type === 'c4' ? 7 : 3);
+        const winTarget = data.winCondition || (data.type === 'c4' ? 4 : 3);
+        const emptyVal = data.type === 'c4' ? 0 : "";
+
+        // 使用通用演算法
+        const winner = checkWinGeneral(data.board, rows, cols, winTarget, emptyVal);
+
         if (winner) {
-            document.getElementById('win-message').innerText = `🎉 恭喜玩家 ${winner} 獲勝！ 🎉`;
+            const userList = data.users ? Object.values(data.users) : [];
+            let winnerName = "";
+            let winSymbol = "";
+
+            if (winner === 'X' || winner === 1) {
+                winnerName = userList[0] ? userList[0].name : "玩家 1";
+                winSymbol = (data.type === 'ttt') ? '(X)' : '(🔴)';
+            } else if (winner === 'O' || winner === 2) {
+                winnerName = userList[1] ? userList[1].name : "玩家 2";
+                winSymbol = (data.type === 'ttt') ? '(O)' : '(🟡)';
+            }
+
+            document.getElementById('win-message').innerText = `🎉 恭喜 ${winnerName} ${winSymbol} 獲勝！ 🎉`;
             document.getElementById('win-overlay').style.display = 'flex';
         } else {
-            document.getElementById('win-overlay').style.display = 'none';
+            // 平手檢測
+            const isFull = data.board.every(cell => cell !== 0 && cell !== "");
+            if (isFull) {
+                 document.getElementById('win-message').innerText = `🤝 平手！ 🤝`;
+                 document.getElementById('win-overlay').style.display = 'flex';
+            } else {
+                document.getElementById('win-overlay').style.display = 'none';
+            }
         }
     }
 
+    // --- 通用 N*M 棋盤 K 連線判定演算法 ---
+    function checkWinGeneral(board, rows, cols, target, emptyVal) {
+        const getCell = (r, c) => {
+            if(r < 0 || r >= rows || c < 0 || c >= cols) return null;
+            return board[r * cols + c];
+        };
+
+        // 四個檢查方向：橫向、縱向、右下斜、左下斜
+        const directions = [
+            [0, 1],  // 橫向 (Right)
+            [1, 0],  // 縱向 (Down)
+            [1, 1],  // 右下 (Diag Down-Right)
+            [1, -1]  // 左下 (Diag Down-Left)
+        ];
+
+        for(let r = 0; r < rows; r++) {
+            for(let c = 0; c < cols; c++) {
+                const current = getCell(r, c);
+                // 跳過空格
+                if (current === emptyVal || current === null) continue;
+
+                // 對每個方向檢查
+                for (let [dr, dc] of directions) {
+                    let count = 1;
+                    // 往該方向延伸檢查 target-1 格
+                    for (let k = 1; k < target; k++) {
+                        if (getCell(r + dr * k, c + dc * k) === current) {
+                            count++;
+                        } else {
+                            break;
+                        }
+                    }
+                    if (count === target) return current;
+                }
+            }
+        }
+        return null;
+    }
+
     window.resetGame = () => {
-        const initBoard = roomDataCache.type === 'c4' ? Array(42).fill(0) : Array(9).fill("");
+        const rows = roomDataCache.rows || (roomDataCache.type === 'c4' ? 6 : 3);
+        const cols = roomDataCache.cols || (roomDataCache.type === 'c4' ? 7 : 3);
+        
+        const initBoard = roomDataCache.type === 'c4' 
+            ? Array(rows*cols).fill(0) 
+            : Array(rows*cols).fill("");
+            
         set(ref(db, `rooms/${currentRoomId}/history`), [initBoard]);
         update(ref(db, `rooms/${currentRoomId}`), { board: initBoard, turn: 0 });
         closeWinOverlay();
@@ -346,26 +545,6 @@
         document.getElementById(id).classList.remove('hidden');
     };
     window.leaveRoom = () => location.reload();
-
-    // 勝負邏輯
-    function checkWinTTT(b) {
-        const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-        for(let l of lines) if(b[l[0]] && b[l[0]]===b[l[1]] && b[l[0]]===b[l[2]]) return b[l[0]];
-        return null;
-    }
-    function checkWinC4(b) {
-        const get = (r,c) => (r<0||r>=6||c<0||c>=7) ? 0 : b[r*7+c];
-        for(let r=0; r<6; r++) {
-            for(let c=0; c<7; c++) {
-                let p = get(r,c); if(!p) continue;
-                if(get(r,c+1)===p && get(r,c+2)===p && get(r,c+3)===p) return p;
-                if(get(r+1,c)===p && get(r+2,c)===p && get(r+3,c)===p) return p;
-                if(get(r+1,c+1)===p && get(r+2,c+2)===p && get(r+3,c+3)===p) return p;
-                if(get(r+1,c-1)===p && get(r+2,c-2)===p && get(r+3,c-3)===p) return p;
-            }
-        }
-        return null;
-    }
 </script>
 </body>
 </html>
