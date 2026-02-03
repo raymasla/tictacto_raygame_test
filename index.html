@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>自定義棋盤連線遊戲</title>
+    <title>有趣的連線遊戲</title>
     <style>
         /* --- 通用樣式 --- */
         body { font-family: 'PingFang TC', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: manipulation; transition: background 0.5s; }
@@ -14,6 +14,8 @@
         .menu-btn { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; background: #007bff; color: white; transition: 0.2s; }
         .menu-btn:hover { background: #0056b3; }
         .btn-c4 { background: #2c3e50; } 
+        .btn-purple { background: #6f42c1; } /* 新增紫色按鈕樣式 */
+        .btn-purple:hover { background: #59359a; }
         
         /* 小按鈕樣式 */
         .btn-sm { border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9em; margin-left: 5px; color: white; }
@@ -28,7 +30,7 @@
         .lock-icon { font-size: 0.8em; margin-left: 5px; color: #d9534f; }
         .room-meta { font-size: 0.75em; color: #888; margin-top: 2px; }
         
-        /* 首頁統計資訊 (新增) */
+        /* 首頁統計資訊 */
         .stats-bar { background: #e9ecef; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em; color: #555; display: flex; justify-content: space-around; }
         .stat-item b { color: #007bff; font-size: 1.2em; }
 
@@ -79,7 +81,23 @@
 
         /* --- 圈圈叉叉 (通用棋盤) --- */
         #ttt-board { display: grid; gap: 5px; margin: 10px auto; background: #ccc; padding: 5px; border-radius: 5px; max-width: 100%; overflow-x: auto;}
-        .ttt-cell { background: white; min-width: 40px; min-height: 40px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer;}
+        .ttt-cell { background: white; min-width: 40px; min-height: 40px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; position: relative;}
+        
+        /* 無限模式：即將消失的棋子特效 */
+        .about-to-die {
+            opacity: 0.4;
+            color: #d9534f;
+            border: 2px dashed #d9534f;
+            box-sizing: border-box;
+        }
+        .about-to-die::after {
+            content: '⚠️';
+            font-size: 10px;
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            opacity: 1;
+        }
 
         /* --- 勝利特效 & 巨大按鈕 --- */
         #win-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; }
@@ -100,7 +118,7 @@
 
     <div id="allRoomsContainer">搜尋中...</div>
     <hr>
-    <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 棋盤連線 (圈圈叉叉/五子棋)</button>
+    <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 圈圈叉叉⭕❌</button>
     <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 (重力落下)</button>
 </div>
 
@@ -127,9 +145,17 @@
             <input type="number" id="inputWin" min="3" max="10" value="3">
         </div>
     </div>
-    <div style="font-size: 0.8em; color: #d9534f; margin-bottom: 10px;">※ 建議最大 15x15，以免手機畫面太擠</div>
+    
+    <div id="infinite-hint" style="font-size: 0.8em; color: #6f42c1; margin-bottom: 10px; display:none;">
+        ※ 無限模式：雙方最多只能有 3 顆棋子，下第 4 顆時最早的會消失。建議 3x3。
+    </div>
+    <div id="normal-hint" style="font-size: 0.8em; color: #d9534f; margin-bottom: 10px;">
+        ※ 建議最大 15x15，以免手機畫面太擠
+    </div>
 
-    <button class="menu-btn" onclick="createRoom()">確認創立</button>
+    <button id="btn-confirm" class="menu-btn" onclick="createRoom()">確認創立</button>
+    <button id="btn-infinite" class="menu-btn btn-purple hidden" onclick="createInfiniteRoom()">創立 無限圈圈叉叉 (只留三子)</button>
+    
     <button onclick="showSection('mainMenu')">返回</button>
 </div>
 
@@ -192,13 +218,11 @@
     
     let myName = "玩家" + Math.floor(Math.random() * 100);
 
-    // --- 新增：全站線上人數統計 (Presence System) ---
-    // 進入頁面時，在 online 節點註冊
+    // --- 全站線上人數統計 ---
     const onlineRef = push(ref(db, 'online'));
     onDisconnect(onlineRef).remove();
     set(onlineRef, true);
 
-    // 監聽總在線人數
     let totalOnlineCount = 0;
     onValue(ref(db, 'online'), (snapshot) => {
         const val = snapshot.val();
@@ -215,7 +239,6 @@
             container.innerHTML = "";
             const rooms = snapshot.val();
             
-            // 重置遊戲中人數
             totalInGameCount = 0;
 
             if (!rooms) { 
@@ -226,14 +249,16 @@
             
             Object.entries(rooms).reverse().forEach(([id, r]) => {
                 const userCount = r.users ? Object.keys(r.users).length : 0;
-                totalInGameCount += userCount; // 累加遊戲中人數
+                totalInGameCount += userCount;
 
-                const typeName = r.type === 'c4' ? '🔵重力四連' : '❌棋盤連線';
+                let typeName = '❌一般圈叉';
+                if (r.type === 'c4') typeName = '🔵重力四連';
+                if (r.type === 'ttt-infinite') typeName = '♾️無限圈叉';
+
                 const hasPass = r.password && r.password !== "";
                 const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
                 const passwordArg = hasPass ? r.password : ""; 
                 
-                // 顯示棋盤大小資訊
                 const rows = r.rows || (r.type === 'c4' ? 6 : 3);
                 const cols = r.cols || (r.type === 'c4' ? 7 : 3);
                 const win = r.winCondition || (r.type === 'c4' ? 4 : 3);
@@ -256,11 +281,8 @@
     }
     initLobby();
 
-    // 更新首頁的統計數字
     function updateStatsUI() {
-        // 大廳人數 = 總連線人數 - 遊戲中人數 (若負數則歸零，防止非同步時間差)
         const lobbyCount = Math.max(0, totalOnlineCount - totalInGameCount);
-        
         document.getElementById('inGameCount').innerText = totalInGameCount;
         document.getElementById('lobbyCount').innerText = lobbyCount;
     }
@@ -279,12 +301,24 @@
     const p1Picker = document.getElementById('p1ColorPicker');
     const p2Picker = document.getElementById('p2ColorPicker');
     
-    function updateColors() {
+    function updateLocalColors() {
         document.documentElement.style.setProperty('--p1-color', p1Picker.value);
         document.documentElement.style.setProperty('--p2-color', p2Picker.value);
     }
-    p1Picker.addEventListener('input', updateColors);
-    p2Picker.addEventListener('input', updateColors);
+    function saveColorsToDB() {
+        if(currentRoomId) {
+            update(ref(db, 'rooms/' + currentRoomId), {
+                p1Color: p1Picker.value,
+                p2Color: p2Picker.value
+            });
+        }
+    }
+    
+    p1Picker.addEventListener('input', updateLocalColors);
+    p2Picker.addEventListener('input', updateLocalColors);
+    p1Picker.addEventListener('change', saveColorsToDB);
+    p2Picker.addEventListener('change', saveColorsToDB);
+
 
     window.deleteRoom = (id) => {
         if(confirm("確定要永久刪除這個房間嗎？")) {
@@ -295,21 +329,54 @@
     // --- 房間管理 ---
     window.showCreateRoom = (type) => {
         selectedGameType = type;
-        const title = type === 'c4' ? '創立 四連棋 (重力落下)' : '創立 棋盤連線 (圈圈叉叉)';
+        
+        let title = "創立房間";
+        if(type === 'c4') title = '創立 四連棋 (重力落下)';
+        if(type === 'ttt') title = '創立 棋盤連線'; // 修改標題，因為現在包含兩種模式
+
         document.getElementById('createTitle').innerText = title;
         
-        // 設定預設值
+        // --- 修改處：根據選擇的遊戲類型顯示/隱藏無限模式按鈕與提示 ---
+        const btnInfinite = document.getElementById('btn-infinite');
+        const btnConfirm = document.getElementById('btn-confirm');
+        const infiniteHint = document.getElementById('infinite-hint');
+        const normalHint = document.getElementById('normal-hint');
+
         if (type === 'c4') {
             document.getElementById('inputRows').value = 6;
             document.getElementById('inputCols').value = 7;
             document.getElementById('inputWin').value = 4;
+            
+            // 四連棋模式：隱藏無限按鈕，顯示標準提示
+            btnInfinite.classList.add('hidden');
+            btnConfirm.innerText = "確認創立";
+            btnConfirm.onclick = createRoom; // 恢復標準創立
+
+            infiniteHint.style.display = 'none';
+            normalHint.style.display = 'block';
         } else {
+            // 圈圈叉叉模式：預設 3x3
             document.getElementById('inputRows').value = 3;
             document.getElementById('inputCols').value = 3;
             document.getElementById('inputWin').value = 3;
+            
+            // 顯示無限按鈕，並修改標準按鈕文字
+            btnInfinite.classList.remove('hidden');
+            btnConfirm.innerText = "創立 一般圈圈叉叉";
+            // 確保點擊一般按鈕時是一般模式
+            btnConfirm.onclick = () => { selectedGameType = 'ttt'; createRoom(); };
+
+            infiniteHint.style.display = 'none';
+            normalHint.style.display = 'block';
         }
 
         showSection('createRoomSection');
+    };
+
+    // 修改處：新增一個專門創立無限模式的函數
+    window.createInfiniteRoom = () => {
+        selectedGameType = 'ttt-infinite';
+        createRoom();
     };
 
     window.createRoom = () => {
@@ -328,11 +395,26 @@
             ? Array(rows * cols).fill(0) 
             : Array(rows * cols).fill("");
         
-        set(roomRef, {
+        // 預設顏色
+        const defaultP1 = "#ff4d4d";
+        const defaultP2 = "#ffd93d";
+
+        const roomData = {
             type: selectedGameType, name, password: pass,
-            board: initBoard, turn: 0, history: [initBoard],
-            rows: rows, cols: cols, winCondition: win
-        }).then(() => enterRoom(roomRef.key));
+            board: initBoard, turn: 0, 
+            rows: rows, cols: cols, winCondition: win,
+            p1Color: defaultP1, p2Color: defaultP2
+        };
+
+        // 如果是無限模式，需要初始化移動紀錄
+        if (selectedGameType === 'ttt-infinite') {
+            roomData.moves = []; // 存儲 { index: 0, player: "X" }
+            roomData.history = [{ board: initBoard, moves: [] }];
+        } else {
+            roomData.history = [initBoard];
+        }
+
+        set(roomRef, roomData).then(() => enterRoom(roomRef.key));
     };
 
     window.enterRoom = (id) => {
@@ -388,16 +470,32 @@
         const cols = data.cols || (data.type === 'c4' ? 7 : 3);
         const win = data.winCondition || (data.type === 'c4' ? 4 : 3);
         
-        // --- 更新：顯示房間內人數 ---
         const userList = data.users ? Object.values(data.users) : [];
         const userCount = userList.length;
-        document.getElementById('gameMetaInfo').innerText = `規格: ${rows}x${cols} | 目標: ${win}連線 | 當前人數: ${userCount}人`;
+        let typeStr = "一般圈叉";
+        if (data.type === 'ttt-infinite') typeStr = "無限圈叉";
+        if (data.type === 'c4') typeStr = "重力四連";
+
+        document.getElementById('gameMetaInfo').innerText = `模式: ${typeStr} | 規格: ${rows}x${cols} | 連線: ${win} | 人數: ${userCount}人`;
 
         const p1Name = userList[0] ? userList[0].name : "玩家 1";
         const p2Name = userList[1] ? userList[1].name : "玩家 2";
         const currentPlayerName = (data.turn % 2 === 0) ? p1Name : p2Name;
 
+        // 同步顏色
+        if(data.type === 'c4') {
+            if(data.p1Color && data.p1Color !== p1Picker.value) {
+                p1Picker.value = data.p1Color;
+                document.documentElement.style.setProperty('--p1-color', data.p1Color);
+            }
+            if(data.p2Color && data.p2Color !== p2Picker.value) {
+                p2Picker.value = data.p2Color;
+                document.documentElement.style.setProperty('--p2-color', data.p2Color);
+            }
+        }
+
         if (data.type === 'c4') {
+            // ... 四連棋渲染邏輯保持不變 ...
             document.getElementById('ttt-board').classList.add('hidden');
             document.getElementById('c4-game-wrapper').classList.remove('hidden');
             const boardDiv = document.getElementById('c4-board');
@@ -415,8 +513,12 @@
                 cell.onclick = () => dropC4(i % cols, rows, cols);
                 boardDiv.appendChild(cell);
             });
-            document.getElementById('status').innerText = `輪到: ${currentPlayerName} (${data.turn % 2 === 0 ? '🔴' : '🟡'})`;
+            const turnSymbol = (data.turn % 2 === 0) ? '(P1)' : '(P2)';
+            document.getElementById('status').innerText = `輪到: ${currentPlayerName} ${turnSymbol}`;
+            document.getElementById('status').style.color = (data.turn % 2 === 0) ? (data.p1Color || '#ff4d4d') : (data.p2Color || '#ffd93d');
+
         } else {
+            // ... 圈圈叉叉 (一般 & 無限) ...
             document.getElementById('c4-game-wrapper').classList.add('hidden');
             document.getElementById('ttt-board').classList.remove('hidden');
             const boardDiv = document.getElementById('ttt-board');
@@ -424,14 +526,39 @@
             boardDiv.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
             
             boardDiv.innerHTML = "";
+
+            // 計算哪些棋子即將消失 (僅限無限模式)
+            let indexToFade = -1;
+            if (data.type === 'ttt-infinite' && data.moves) {
+                // 找出當前所有棋子
+                const moves = data.moves;
+                const p1Moves = moves.filter(m => m.player === 'X');
+                const p2Moves = moves.filter(m => m.player === 'O');
+                
+                // 如果現在是某人的回合，且他已經有3子，那他"最舊"的那子就是下一手會消失的
+                // 或者是顯示"場上最舊的子"？通常是顯示"如果我下，哪顆會消"
+                // 當前輪到的人：
+                const currentSymbol = (data.turn % 2 === 0) ? 'X' : 'O';
+                const myMoves = (currentSymbol === 'X') ? p1Moves : p2Moves;
+
+                if (myMoves.length >= 3) {
+                    // 最舊的那個
+                    indexToFade = myMoves[0].index;
+                }
+            }
+
             data.board.forEach((val, i) => {
                 const cell = document.createElement('div');
                 cell.className = 'ttt-cell';
+                if (i === indexToFade) {
+                    cell.classList.add('about-to-die');
+                }
                 cell.innerText = val;
                 cell.onclick = () => clickTTT(i);
                 boardDiv.appendChild(cell);
             });
             document.getElementById('status').innerText = `輪到: ${currentPlayerName} (${data.turn % 2 === 0 ? 'X' : 'O'})`;
+            document.getElementById('status').style.color = '#d9534f';
         }
     }
 
@@ -448,32 +575,96 @@
     }
 
     function clickTTT(i) {
-        if (roomDataCache.board[i] !== "") return;
+        if (roomDataCache.board[i] !== "") return; // 格子有東西不能下
+        
+        const isInfinite = (roomDataCache.type === 'ttt-infinite');
         const board = [...roomDataCache.board];
-        board[i] = roomDataCache.turn % 2 === 0 ? "X" : "O";
-        updateMove(board);
+        const currentPlayer = roomDataCache.turn % 2 === 0 ? "X" : "O";
+        
+        let newMoves = [];
+        if (isInfinite) {
+            newMoves = roomDataCache.moves ? [...roomDataCache.moves] : [];
+        }
+
+        // 下子
+        board[i] = currentPlayer;
+        
+        // 如果是無限模式，處理移除邏輯
+        if (isInfinite) {
+            newMoves.push({ index: i, player: currentPlayer });
+            
+            // 檢查該玩家是否超過 3 子
+            const myMoves = newMoves.filter(m => m.player === currentPlayer);
+            if (myMoves.length > 3) {
+                const moveToRemove = myMoves[0]; // 最舊的
+                // 從棋盤移除
+                board[moveToRemove.index] = "";
+                // 從紀錄移除 (要找他在主陣列的位置)
+                const realIndex = newMoves.indexOf(moveToRemove);
+                if (realIndex > -1) {
+                    newMoves.splice(realIndex, 1);
+                }
+            }
+            updateMove(board, newMoves);
+        } else {
+            // 一般模式
+            updateMove(board);
+        }
     }
 
-    function updateMove(newBoard) {
+    function updateMove(newBoard, newMoves = null) {
         const history = roomDataCache.history || [];
-        history.push(newBoard);
-        update(ref(db, `rooms/${currentRoomId}`), {
-            board: newBoard,
-            turn: roomDataCache.turn + 1,
-            history: history
-        });
+        const isInfinite = (roomDataCache.type === 'ttt-infinite');
+
+        if (isInfinite) {
+            // 無限模式 History 存物件 { board, moves }
+            history.push({ board: newBoard, moves: newMoves });
+            update(ref(db, `rooms/${currentRoomId}`), {
+                board: newBoard,
+                moves: newMoves,
+                turn: roomDataCache.turn + 1,
+                history: history
+            });
+        } else {
+            // 一般模式 History 存 board 陣列
+            history.push(newBoard);
+            update(ref(db, `rooms/${currentRoomId}`), {
+                board: newBoard,
+                turn: roomDataCache.turn + 1,
+                history: history
+            });
+        }
     }
 
     window.undoStep = () => {
         const history = roomDataCache.history || [];
         if (history.length <= 1) return alert("不能再退了！");
-        history.pop();
-        const lastBoard = history[history.length - 1];
-        update(ref(db, `rooms/${currentRoomId}`), {
-            board: lastBoard,
-            turn: roomDataCache.turn - 1,
-            history: history
-        });
+        
+        history.pop(); // 移除現在狀態
+        const lastState = history[history.length - 1]; // 取得上一個狀態
+        
+        const isInfinite = (roomDataCache.type === 'ttt-infinite');
+        
+        if (isInfinite) {
+            // lastState 應該是 { board, moves }
+            // 兼容性檢查：如果舊資料沒有 moves，可能會報錯，稍微防呆一下
+            const prevBoard = lastState.board || lastState; 
+            const prevMoves = lastState.moves || [];
+
+            update(ref(db, `rooms/${currentRoomId}`), {
+                board: prevBoard,
+                moves: prevMoves,
+                turn: roomDataCache.turn - 1,
+                history: history
+            });
+        } else {
+            // 一般模式 lastState 是 board Array
+            update(ref(db, `rooms/${currentRoomId}`), {
+                board: lastState,
+                turn: roomDataCache.turn - 1,
+                history: history
+            });
+        }
     };
 
     window.sendMessage = () => {
@@ -500,33 +691,37 @@
             const userList = data.users ? Object.values(data.users) : [];
             let winnerName = "";
             let winSymbol = "";
-            let winColor = "#ffffff"; // 預設白色
+            let winColor = "#ffffff";
 
-            // --- 更新：讀取玩家自定義顏色並應用 ---
             if (winner === 'X' || winner === 1) {
                 winnerName = userList[0] ? userList[0].name : "玩家 1";
-                winSymbol = (data.type === 'ttt') ? '(X)' : '(🔴)';
-                if(data.type === 'c4') winColor = document.getElementById('p1ColorPicker').value;
+                winSymbol = (data.type === 'c4') ? '(P1)' : '(X)';
+                if(data.type === 'c4') winColor = data.p1Color || document.getElementById('p1ColorPicker').value;
             } else if (winner === 'O' || winner === 2) {
                 winnerName = userList[1] ? userList[1].name : "玩家 2";
-                winSymbol = (data.type === 'ttt') ? '(O)' : '(🟡)';
-                if(data.type === 'c4') winColor = document.getElementById('p2ColorPicker').value;
+                winSymbol = (data.type === 'c4') ? '(P2)' : '(O)';
+                if(data.type === 'c4') winColor = data.p2Color || document.getElementById('p2ColorPicker').value;
             }
 
             msgEl.innerText = `🎉 恭喜 ${winnerName} ${winSymbol} 獲勝！ 🎉`;
-            
-            // 設定勝利文字顏色
             msgEl.style.color = winColor;
             
             document.getElementById('win-overlay').style.display = 'flex';
         } else {
-            const isFull = data.board.every(cell => cell !== 0 && cell !== "");
-            if (isFull) {
-                 msgEl.innerText = `🤝 平手！ 🤝`;
-                 msgEl.style.color = "white";
-                 document.getElementById('win-overlay').style.display = 'flex';
+            // 平手判定：如果是無限模式，理論上很難平手(除非格子很少)，且永遠不會滿盤
+            // 所以無限模式只檢查"是否有人贏"。
+            // 只有一般模式才檢查平手
+            if (data.type !== 'ttt-infinite') {
+                const isFull = data.board.every(cell => cell !== 0 && cell !== "");
+                if (isFull) {
+                     msgEl.innerText = `🤝 平手！ 🤝`;
+                     msgEl.style.color = "white";
+                     document.getElementById('win-overlay').style.display = 'flex';
+                } else {
+                    document.getElementById('win-overlay').style.display = 'none';
+                }
             } else {
-                document.getElementById('win-overlay').style.display = 'none';
+                 document.getElementById('win-overlay').style.display = 'none';
             }
         }
     }
@@ -570,8 +765,14 @@
             ? Array(rows*cols).fill(0) 
             : Array(rows*cols).fill("");
             
-        set(ref(db, `rooms/${currentRoomId}/history`), [initBoard]);
-        update(ref(db, `rooms/${currentRoomId}`), { board: initBoard, turn: 0 });
+        // 重置時也要考慮無限模式的 moves
+        if (roomDataCache.type === 'ttt-infinite') {
+            set(ref(db, `rooms/${currentRoomId}/history`), [{ board: initBoard, moves: [] }]);
+            update(ref(db, `rooms/${currentRoomId}`), { board: initBoard, moves: [], turn: 0 });
+        } else {
+            set(ref(db, `rooms/${currentRoomId}/history`), [initBoard]);
+            update(ref(db, `rooms/${currentRoomId}`), { board: initBoard, turn: 0 });
+        }
         closeWinOverlay();
     };
 
