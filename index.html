@@ -12,7 +12,7 @@
         
         /* 按鈕與列表 */
         .menu-btn { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; background: #007bff; color: white; transition: 0.2s; }
-        .menu-btn:hover { filter: brightness(0.9); }
+        .menu-btn:hover { background: #0056b3; }
         .btn-c4 { background: #2c3e50; } 
         .btn-purple { background: #6f42c1; } /* 新增紫色按鈕樣式 */
         .btn-purple:hover { background: #59359a; }
@@ -120,10 +120,6 @@
     <hr>
     <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 圈圈叉叉⭕❌</button>
     <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 (重力落下)</button>
-    
-    <hr>
-    <button class="menu-btn" style="background: #1a1a1a;" onclick="window.location.href='https://raymasla.github.io/Yahtzee-online/'">前往🎲Yahtzee Pro</button>
-    <button class="menu-btn" style="background: #4a148c;" onclick="window.location.href='https://raymasla.github.io/whois/'">前往🕵️ 誰是臥底</button>
 </div>
 
 <div id="createRoomSection" class="container hidden">
@@ -238,7 +234,7 @@
     let totalInGameCount = 0;
 
     function initLobby() {
-        onValue(ref(db, 'rooms'), (snapshot) => {
+        onValue(ref(db, 'ongame_room'), (snapshot) => {
             const container = document.getElementById('allRoomsContainer');
             container.innerHTML = "";
             const rooms = snapshot.val();
@@ -311,7 +307,7 @@
     }
     function saveColorsToDB() {
         if(currentRoomId) {
-            update(ref(db, 'rooms/' + currentRoomId), {
+            update(ref(db, 'ongame_room/' + currentRoomId), {
                 p1Color: p1Picker.value,
                 p2Color: p2Picker.value
             });
@@ -326,7 +322,7 @@
 
     window.deleteRoom = (id) => {
         if(confirm("確定要永久刪除這個房間嗎？")) {
-            remove(ref(db, 'rooms/' + id)).then(() => alert("房間已刪除"));
+            remove(ref(db, 'ongame_room/' + id)).then(() => alert("房間已刪除"));
         }
     };
 
@@ -394,7 +390,7 @@
         if(rows < 3) rows = 3; if(cols < 3) cols = 3; if(win < 3) win = 3;
         if(win > Math.max(rows, cols)) { alert("連線數不能大於棋盤長寬！"); return; }
         
-        const roomRef = push(ref(db, 'rooms'));
+        const roomRef = push(ref(db, 'ongame_room'));
         const initBoard = selectedGameType === 'c4' 
             ? Array(rows * cols).fill(0) 
             : Array(rows * cols).fill("");
@@ -426,12 +422,12 @@
         showSection('gameArea');
         document.getElementById('myNameDisplay').innerText = myName;
 
-        const userRef = push(ref(db, `rooms/${id}/users`));
+        const userRef = push(ref(db, `ongame_room/${id}/users`));
         currentUserKey = userRef.key;
         onDisconnect(userRef).remove();
         set(userRef, { name: myName });
 
-        onValue(ref(db, 'rooms/' + id), (snapshot) => {
+        onValue(ref(db, 'ongame_room/' + id), (snapshot) => {
             const data = snapshot.val();
             if (!data) { alert("房間已被刪除"); leaveRoom(); return; }
             roomDataCache = data;
@@ -439,7 +435,7 @@
             checkWinner(data);
         });
 
-        onValue(ref(db, `rooms/${id}/chat`), (snapshot) => {
+        onValue(ref(db, `ongame_room/${id}/chat`), (snapshot) => {
             const chatDiv = document.getElementById('chat-msgs');
             chatDiv.innerHTML = "";
             const msgs = snapshot.val();
@@ -461,7 +457,7 @@
             document.getElementById('myNameDisplay').innerText = myName;
             
             if (currentRoomId && currentUserKey) {
-                update(ref(db, `rooms/${currentRoomId}/users/${currentUserKey}`), { name: myName });
+                update(ref(db, `ongame_room/${currentRoomId}/users/${currentUserKey}`), { name: myName });
             }
         }
     };
@@ -623,7 +619,7 @@
         if (isInfinite) {
             // 無限模式 History 存物件 { board, moves }
             history.push({ board: newBoard, moves: newMoves });
-            update(ref(db, `rooms/${currentRoomId}`), {
+            update(ref(db, `ongame_room/${currentRoomId}`), {
                 board: newBoard,
                 moves: newMoves,
                 turn: roomDataCache.turn + 1,
@@ -632,7 +628,7 @@
         } else {
             // 一般模式 History 存 board 陣列
             history.push(newBoard);
-            update(ref(db, `rooms/${currentRoomId}`), {
+            update(ref(db, `ongame_room/${currentRoomId}`), {
                 board: newBoard,
                 turn: roomDataCache.turn + 1,
                 history: history
@@ -655,7 +651,7 @@
             const prevBoard = lastState.board || lastState; 
             const prevMoves = lastState.moves || [];
 
-            update(ref(db, `rooms/${currentRoomId}`), {
+            update(ref(db, `ongame_room/${currentRoomId}`), {
                 board: prevBoard,
                 moves: prevMoves,
                 turn: roomDataCache.turn - 1,
@@ -663,7 +659,7 @@
             });
         } else {
             // 一般模式 lastState 是 board Array
-            update(ref(db, `rooms/${currentRoomId}`), {
+            update(ref(db, `ongame_room/${currentRoomId}`), {
                 board: lastState,
                 turn: roomDataCache.turn - 1,
                 history: history
@@ -674,7 +670,7 @@
     window.sendMessage = () => {
         const input = document.getElementById('chatInput');
         if (!input.value.trim()) return;
-        push(ref(db, `rooms/${currentRoomId}/chat`), {
+        push(ref(db, `ongame_room/${currentRoomId}/chat`), {
             user: myName,
             text: input.value,
             time: serverTimestamp()
@@ -771,11 +767,11 @@
             
         // 重置時也要考慮無限模式的 moves
         if (roomDataCache.type === 'ttt-infinite') {
-            set(ref(db, `rooms/${currentRoomId}/history`), [{ board: initBoard, moves: [] }]);
-            update(ref(db, `rooms/${currentRoomId}`), { board: initBoard, moves: [], turn: 0 });
+            set(ref(db, `ongame_room/${currentRoomId}/history`), [{ board: initBoard, moves: [] }]);
+            update(ref(db, `ongame_room/${currentRoomId}`), { board: initBoard, moves: [], turn: 0 });
         } else {
-            set(ref(db, `rooms/${currentRoomId}/history`), [initBoard]);
-            update(ref(db, `rooms/${currentRoomId}`), { board: initBoard, turn: 0 });
+            set(ref(db, `ongame_room/${currentRoomId}/history`), [initBoard]);
+            update(ref(db, `ongame_room/${currentRoomId}`), { board: initBoard, turn: 0 });
         }
         closeWinOverlay();
     };
