@@ -3,117 +3,279 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>新遊戲！Liar deck</title>
+    <title>有趣小遊戲</title>
     <style>
-        /* --- 通用樣式 (來自 norma) --- */
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: manipulation; transition: background 0.5s; overflow-x: hidden; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; margin-bottom: 20px; position: relative; z-index: 10; transition: 0.3s; }
+        /* ========================================= */
+        /* --- 全局暗色系主題與動畫 (Dark Theme) --- */
+        /* ========================================= */
+        :root {
+            --bg-color: #0f172a;
+            --container-bg: rgba(30, 41, 59, 0.85);
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --primary-grad: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-orange: #f59e0b;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --shadow-glow: 0 0 15px rgba(99, 102, 241, 0.3);
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #0f172a);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            touch-action: manipulation;
+            overflow-x: hidden;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 容器美化 - 玻璃擬態 */
+        .container {
+            background: var(--container-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            width: 100%;
+            max-width: 550px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 10;
+            transition: all 0.3s ease;
+            animation: fadeIn Up 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h3, h4 { margin-top: 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .hidden { display: none !important; }
-        
-        /* 按鈕與列表 (來自 norma) */
-        .menu-btn { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; background: #007bff; color: white; transition: 0.2s; font-weight: bold; }
-        .menu-btn:hover { background: #0056b3; transform: translateY(-2px); }
+
+        /* --- 按鈕美化 --- */
+        button { font-family: inherit; }
+        .menu-btn {
+            width: 100%; padding: 16px; margin: 12px 0; font-size: 18px; cursor: pointer;
+            border: none; border-radius: 12px;
+            background: var(--primary-grad);
+            color: white; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        .menu-btn::after {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(255,255,255,0.2), transparent);
+            opacity: 0; transition: 0.3s;
+        }
+        .menu-btn:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.5); }
+        .menu-btn:hover::after { opacity: 1; }
         .menu-btn:active { transform: translateY(0); }
-        .btn-c4 { background: #2c3e50; } 
-        .btn-purple { background: #6f42c1; }
-        .btn-liar { background: #d35400; box-shadow: 0 4px 0 #a04000; }
-        .btn-liar:hover { background: #e67e22; }
-        
-        .btn-sm { border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9em; margin-left: 5px; color: white; }
-        .btn-green { background: #28a745; }
-        .btn-red { background: #dc3545; }
-        .btn-undo { background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
 
-        /* 房間列表項目 (來自 norma) */
-        .room-item { border: 1px solid #ddd; padding: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; background: #fafafa; }
+        .btn-c4 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .btn-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+        .btn-liar { background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 15px rgba(234, 88, 12, 0.3); }
+        .btn-liar:hover { box-shadow: 0 8px 25px rgba(234, 88, 12, 0.6); }
+
+        /* 小按鈕 */
+        .btn-sm { border: none; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 0.85em; margin-left: 6px; color: white; transition: 0.2s; font-weight: 600; }
+        .btn-green { background: var(--accent-green); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
+        .btn-green:hover { background: #059669; }
+        .btn-red { background: var(--accent-red); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
+        .btn-red:hover { background: #dc2626; }
+        
+        .btn-undo { 
+            background: #475569; color: #cbd5e1; border: 1px solid #64748b; 
+            padding: 10px 20px; border-radius: 30px; cursor: pointer; margin-top: 15px; 
+            transition: 0.2s;
+        }
+        .btn-undo:hover { background: #64748b; color: white; }
+
+        /* --- 房間列表項目 --- */
+        .room-item {
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 15px; margin: 12px 0;
+            display: flex; justify-content: space-between; align-items: center;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            transition: 0.3s;
+            animation: fadeIn 0.5s ease;
+        }
+        .room-item:hover { background: rgba(255, 255, 255, 0.05); border-color: rgba(255,255,255,0.2); transform: translateX(5px); }
+        
         .room-info { text-align: left; display: flex; flex-direction: column; }
-        .room-name { font-weight: bold; font-size: 1.1em; }
-        .lock-icon { font-size: 0.8em; margin-left: 5px; color: #d9534f; }
-        .room-meta { font-size: 0.75em; color: #888; margin-top: 2px; }
-        .status-badge { font-size: 0.7em; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
-        .status-wait { background: #28a745; color: white; }
-        .status-play { background: #dc3545; color: white; }
-
-        /* 統計與輸入框 (來自 norma) */
-        .stats-bar { background: #e9ecef; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em; color: #555; display: flex; justify-content: space-around; }
-        .stat-item b { color: #007bff; font-size: 1.2em; }
-        input { padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
-        .input-group { margin: 10px 0; text-align: left; display: flex; align-items: center; justify-content: space-between; }
-        .settings-row { display: flex; gap: 10px; margin: 10px 0; }
-        .settings-item { flex: 1; display: flex; flex-direction: column; }
+        .room-name { font-weight: bold; font-size: 1.1em; color: #fff; display: flex; align-items: center; gap: 5px; }
+        .lock-icon { font-size: 0.8em; color: #f87171; }
+        .room-meta { font-size: 0.8em; color: var(--text-muted); margin-top: 4px; }
         
-        /* 聊天室 (來自 norma) */
-        #chat-area { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; text-align: left; }
-        #chat-msgs { height: 100px; overflow-y: auto; background: #f8f9fa; border-radius: 4px; padding: 5px; font-size: 0.85em; margin-bottom: 5px; border: 1px solid #ddd; }
-        .chat-input-group { display: flex; gap: 5px; }
-        .chat-input-group input { flex: 1; text-align: left; font-size: 0.9em; }
-        .editable-name { color: #007bff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #007bff; }
+        .status-badge { font-size: 0.75em; padding: 3px 8px; border-radius: 20px; margin-left: 8px; font-weight: bold; letter-spacing: 0.5px; }
+        .status-wait { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .status-play { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
 
-        /* 浮動聊天室 (Danmaku) */
+        /* --- 統計與輸入框 --- */
+        .stats-bar {
+            background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;
+            margin-bottom: 20px; font-size: 0.95em; color: var(--text-muted);
+            display: flex; justify-content: space-around; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-item b { color: #60a5fa; font-size: 1.2em; margin-left: 5px; }
+
+        input {
+            padding: 10px 15px; text-align: center; border: 1px solid #475569;
+            border-radius: 8px; background: #1e293b; color: white; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2); }
+        
+        .input-group { margin: 15px 0; text-align: left; display: flex; align-items: center; justify-content: space-between; color: var(--text-main); }
+        .settings-row { display: flex; gap: 10px; margin: 10px 0; }
+        .settings-item { flex: 1; display: flex; flex-direction: column; color: var(--text-muted); font-size: 0.9em; }
+        .settings-item input { margin-top: 5px; width: 100%; box-sizing: border-box; }
+
+        /* 騙子規則區塊優化 */
+        #liarSettings {
+            background: rgba(67, 20, 7, 0.4) !important;
+            border: 1px solid rgba(234, 88, 12, 0.3);
+            border-left: 5px solid #ea580c !important;
+            color: #fdba74;
+        }
+        #liarSettings h4 { color: #fb923c !important; }
+
+        /* --- 聊天室優化 --- */
+        #chat-area { margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; text-align: left; }
+        #chat-msgs {
+            height: 120px; overflow-y: auto; background: rgba(0,0,0,0.3);
+            border-radius: 8px; padding: 10px; font-size: 0.9em; margin-bottom: 10px;
+            border: 1px solid rgba(255,255,255,0.05); color: var(--text-main);
+        }
+        #chat-msgs div { margin-bottom: 4px; animation: fadeIn 0.3s; }
+        #chat-msgs b { color: #a5b4fc; margin-right: 5px; }
+        
+        .chat-input-group { display: flex; gap: 8px; }
+        .chat-input-group input { flex: 1; text-align: left; background: rgba(0,0,0,0.4); }
+        .chat-input-group button { 
+            background: #334155; border: 1px solid #475569; color: white; 
+            padding: 0 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; 
+        }
+        .chat-input-group button:hover { background: #475569; }
+        .editable-name { color: #60a5fa; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #60a5fa; transition: 0.2s; }
+        .editable-name:hover { color: #93c5fd; border-color: #93c5fd; }
+
+        /* 浮動聊天 (Danmaku) */
         .floating-chat-container {
             position: absolute; top: 0; left: 0; width: 100%; height: 60%;
             pointer-events: none; overflow: hidden; z-index: 900;
         }
         .float-msg {
             position: absolute; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7); color: white;
-            padding: 5px 12px; border-radius: 20px; font-weight: bold;
+            background: rgba(139, 92, 246, 0.8); color: white;
+            padding: 6px 16px; border-radius: 20px; font-weight: bold;
             font-size: 1.1em; white-space: nowrap;
-            animation: floatUpFade 3s forwards;
-            text-shadow: 1px 1px 2px black;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            animation: floatUpFade 4s forwards;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
         }
         @keyframes floatUpFade {
-            0% { opacity: 0; bottom: 20%; transform: translateX(-50%) scale(0.8); }
+            0% { opacity: 0; bottom: 10%; transform: translateX(-50%) scale(0.8); }
             10% { opacity: 1; transform: translateX(-50%) scale(1); }
             80% { opacity: 1; }
-            100% { opacity: 0; bottom: 80%; transform: translateX(-50%); }
+            100% { opacity: 0; bottom: 85%; transform: translateX(-50%); }
         }
 
-        /* --- 棋盤遊戲樣式 (來自 norma) --- */
+        /* --- 棋盤遊戲樣式 (Dark Board) --- */
         #gameArea { transition: 0.3s; }
-        :root { --c4-cell-size: 40px; --p1-color: #ff4d4d; --p2-color: #ffd93d; }
-        #c4-game-wrapper { display: flex; flex-direction: column; align-items: center; background-color: rgba(44, 62, 80, 0.9); padding: 15px; border-radius: 10px; overflow-x: auto; }
-        .c4-board { display: grid; gap: 5px; padding: 10px; background: #3498db; border-radius: 10px; }
-        .c4-cell { width: var(--c4-cell-size); height: var(--c4-cell-size); background-color: #1a252f; border-radius: 50%; }
-        .piece { width: 100%; height: 100%; border-radius: 50%; animation: dropAnim 0.5s forwards; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3); }
-        .p1 { background: var(--p1-color); } .p2 { background: var(--p2-color); }
-        @keyframes dropAnim { from { transform: translateY(-200px); } to { transform: translateY(0); } }
+        :root { --c4-cell-size: 40px; --p1-color: #f87171; --p2-color: #facc15; }
         
-        #ttt-board { display: grid; gap: 5px; margin: 10px auto; background: #ccc; padding: 5px; border-radius: 5px; }
-        .ttt-cell { background: white; min-width: 40px; min-height: 40px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; position: relative;}
-        .about-to-die { opacity: 0.4; color: #d9534f; border: 2px dashed #d9534f; box-sizing: border-box; }
+        #c4-game-wrapper {
+            display: flex; flex-direction: column; align-items: center;
+            background-color: #1e293b; 
+            padding: 20px; border-radius: 16px; overflow-x: auto;
+            border: 2px solid #334155;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        .c4-board { 
+            display: grid; gap: 6px; padding: 12px; 
+            background: #0f172a; border-radius: 12px; border: 2px solid #1e293b;
+        }
+        .c4-cell { 
+            width: var(--c4-cell-size); height: var(--c4-cell-size); 
+            background-color: #334155; border-radius: 50%; 
+            box-shadow: inset 2px 2px 5px rgba(0,0,0,0.4);
+        }
+        .piece { 
+            width: 100%; height: 100%; border-radius: 50%; 
+            animation: dropAnim 0.5s cubic-bezier(0.5, 0, 0.75, 0) forwards; 
+            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.2), 0 0 10px currentColor; 
+        }
+        .p1 { background: var(--p1-color); color: var(--p1-color); } 
+        .p2 { background: var(--p2-color); color: var(--p2-color); }
+        @keyframes dropAnim { from { transform: translateY(-300px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        #ttt-board { 
+            display: grid; gap: 8px; margin: 15px auto; 
+            background: #334155; padding: 8px; border-radius: 12px; 
+            max-width: 300px;
+        }
+        .ttt-cell { 
+            background: #1e293b; min-width: 50px; min-height: 50px; aspect-ratio: 1/1; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 2rem; font-weight: bold; cursor: pointer; position: relative;
+            border-radius: 8px; color: #fff; transition: 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .ttt-cell:hover { background: #2d3e52; }
+        .about-to-die { opacity: 0.4; color: #ef4444; border: 2px dashed #ef4444; box-sizing: border-box; }
 
         /* ========================================= */
         /* --- 移植版 騙子桌遊 (Liar's Deck) 樣式 --- */
         /* ========================================= */
         #liar-wrapper {
-            /* 木質邊框與質感牌桌 */
-            background: radial-gradient(circle, #2e7d32 0%, #1b5e20 100%);
-            border: 12px solid #5d4037;
+            /* 木質邊框改為暗黑高級賭桌 */
+            background: radial-gradient(circle, #064e3b 0%, #022c22 100%);
+            border: 10px solid #3f2e26;
             border-radius: 20px;
-            box-shadow: inset 0 0 80px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.8), 0 15px 40px rgba(0,0,0,0.6);
             padding: 10px;
             color: #ecf0f1;
             position: relative;
-            min-height: 550px;
+            min-height: 580px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
         }
         
         /* 頂部資訊 */
         .liar-header {
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 30px;
+            background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 30px;
             border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px);
         }
         .target-card-display {
             font-size: 1.4em; font-weight: 800; padding: 5px 20px;
-            background: #f1c40f; color: #2c3e50; border-radius: 8px;
-            border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            text-shadow: none;
+            background: linear-gradient(to bottom, #fcd34d, #d97706); color: #451a03; 
+            border-radius: 8px; border: 2px solid #fff; 
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.6);
+            text-shadow: none; animation: popIn 0.3s;
         }
 
         /* 牌桌中央 */
@@ -121,61 +283,59 @@
             flex: 1; position: relative;
             display: flex; justify-content: center; align-items: center;
             perspective: 800px;
-            flex-direction: column; /* 改為直向以便排列提示與牌堆 */
+            flex-direction: column; 
         }
         
         /* 卡牌設計 */
         .card {
             width: 55px; height: 80px;
-            background: #fff; border-radius: 6px;
-            box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+            background: #e2e2e2; border-radius: 6px;
+            box-shadow: 2px 4px 10px rgba(0,0,0,0.6);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             font-weight: bold; font-size: 1.2em; position: relative;
-            user-select: none; border: 1px solid #ccc;
+            user-select: none; border: 1px solid #999;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             text-shadow: none;
         }
-        .card.red { color: #c0392b; }
-        .card.black { color: #2c3e50; }
-        .card.joker { color: #8e44ad; border: 2px solid gold; }
+        .card.red { color: #dc2626; }
+        .card.black { color: #1e293b; }
+        .card.joker { color: #7c3aed; border: 2px solid #facc15; }
         .card-back {
-            background: repeating-linear-gradient(45deg, #922b21, #922b21 10px, #a93226 10px, #a93226 20px);
-            border: 2px solid #ecf0f1;
+            background: repeating-linear-gradient(45deg, #7f1d1d, #7f1d1d 10px, #991b1b 10px, #991b1b 20px);
+            border: 2px solid #e5e7eb;
         }
-        .card-back::after { content: "⚜️"; color: rgba(255,255,255,0.3); font-size: 24px; }
+        .card-back::after { content: "⚜️"; color: rgba(255,255,255,0.4); font-size: 24px; }
 
         /* 對手區 */
         .opponents-row { display: flex; justify-content: space-around; width: 100%; margin-top: 10px; }
         .opponent {
-            background: rgba(0,0,0,0.6); padding: 8px; border-radius: 10px;
-            text-align: center; width: 80px; position: relative;
+            background: rgba(0,0,0,0.7); padding: 8px; border-radius: 12px;
+            text-align: center; width: 85px; position: relative;
             transition: 0.3s; border: 2px solid transparent;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .opponent.active { border-color: #f1c40f; background: rgba(241, 196, 15, 0.2); transform: scale(1.05); }
-        .opponent.dead { opacity: 0.6; filter: grayscale(100%); }
-        .opponent.escaped { border-color: #2ecc71; opacity: 0.8; }
+        .opponent.active { 
+            border-color: #facc15; background: rgba(250, 204, 21, 0.15); 
+            transform: scale(1.1); box-shadow: 0 0 15px rgba(250, 204, 21, 0.4);
+        }
+        .opponent.dead { opacity: 0.6; filter: grayscale(100%); border: 1px solid #555; }
+        .opponent.escaped { border-color: #10b981; opacity: 0.9; box-shadow: 0 0 10px #10b981; }
         
         /* 槍膛顯示 */
         .cylinder-display {
-            display: flex; justify-content: center; gap: 2px; margin-top: 5px;
+            display: flex; justify-content: center; gap: 3px; margin-top: 5px;
         }
-        .bullet-slot { width: 8px; height: 8px; border-radius: 50%; background: #555; border: 1px solid #888; }
-        .bullet-slot.fired { background: #000; box-shadow: inset 0 0 2px rgba(255,255,255,0.5); }
-        .bullet-slot.live { background: #e74c3c; box-shadow: 0 0 5px #c0392b; }
+        .bullet-slot { width: 8px; height: 8px; border-radius: 50%; background: #4b5563; border: 1px solid #6b7280; }
+        .bullet-slot.fired { background: #111; box-shadow: inset 0 0 2px rgba(255,255,255,0.2); }
+        .bullet-slot.live { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
 
         /* 我的槍枝狀態顯示 */
         .my-gun-status {
-            position: absolute;
-            bottom: 140px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 8px;
-            border-radius: 10px;
-            color: white;
-            text-align: center;
-            border: 2px solid #7f8c8d;
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
-            z-index: 50;
+            position: absolute; bottom: 140px; right: 10px;
+            background: rgba(0, 0, 0, 0.85); padding: 10px;
+            border-radius: 12px; color: white; text-align: center;
+            border: 1px solid #4b5563;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 50;
         }
 
         /* 手牌區 */
@@ -184,63 +344,64 @@
             padding-bottom: 10px; z-index: 20;
         }
         .my-hand-area .card { margin: 0 4px; cursor: pointer; transform-origin: bottom center; }
-        .my-hand-area .card:hover { transform: translateY(-15px) scale(1.1); z-index: 50; }
-        .my-hand-area .card.selected { transform: translateY(-25px); border: 3px solid #f1c40f; box-shadow: 0 0 15px #f1c40f; }
+        .my-hand-area .card:hover { transform: translateY(-20px) scale(1.15); z-index: 50; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .my-hand-area .card.selected { transform: translateY(-30px); border: 3px solid #facc15; box-shadow: 0 0 20px #facc15; }
 
         /* 遊戲按鈕區 */
         .liar-controls { display: flex; gap: 15px; justify-content: center; margin-bottom: 10px; height: 50px; }
         .btn-game { 
-            padding: 0 25px; border-radius: 25px; border: none; font-weight: 800; cursor: pointer; 
-            font-size: 1.1em; color: white; box-shadow: 0 5px 0 rgba(0,0,0,0.3); 
-            transition: 0.1s; text-transform: uppercase;
+            padding: 0 28px; border-radius: 30px; border: none; font-weight: 800; cursor: pointer; 
+            font-size: 1.1em; color: white; box-shadow: 0 6px 0 rgba(0,0,0,0.4); 
+            transition: 0.1s; text-transform: uppercase; letter-spacing: 1px;
         }
         .btn-game:active { transform: translateY(4px); box-shadow: none; }
-        .btn-game:disabled { background: #7f8c8d; cursor: not-allowed; box-shadow: none; transform: translateY(4px); filter: grayscale(0.8); }
+        .btn-game:disabled { background: #64748b; cursor: not-allowed; box-shadow: none; transform: translateY(4px); filter: grayscale(0.8); }
 
-        .btn-play { background: linear-gradient(to bottom, #3498db, #2980b9); }
-        .btn-liar-call { background: linear-gradient(to bottom, #e74c3c, #c0392b); font-size: 1.3em; letter-spacing: 1px; }
+        .btn-play { background: linear-gradient(to bottom, #3b82f6, #1d4ed8); }
+        .btn-liar-call { background: linear-gradient(to bottom, #ef4444, #b91c1c); font-size: 1.3em; letter-spacing: 2px; }
 
         /* --- 動畫特效層 --- */
         
         /* 開場所有牌展示層 */
         #intro-overlay {
             position: absolute; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.85); z-index: 300;
+            background: rgba(0,0,0,0.9); z-index: 300;
             display: none; flex-direction: row; align-items: center; justify-content: center;
-            gap: 20px;
+            gap: 20px; backdrop-filter: blur(5px);
         }
         .intro-grid {
-            display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px;
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
         }
         .intro-side {
             display: flex; flex-direction: column; gap: 10px; margin-left: 20px; padding-left: 20px; border-left: 2px dashed rgba(255,255,255,0.3);
         }
         .intro-card-sm {
-            width: 30px; height: 45px; background: white; border-radius: 4px;
-            font-size: 0.8em; display: flex; align-items: center; justify-content: center; font-weight: bold;
+            width: 32px; height: 48px; background: white; border-radius: 4px;
+            font-size: 0.9em; display: flex; align-items: center; justify-content: center; font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5);
             animation: popIn 0.3s backwards;
         }
-        @keyframes popIn { 0%{transform:scale(0);} 100%{transform:scale(1);} }
+        @keyframes popIn { 0%{transform:scale(0); opacity:0;} 100%{transform:scale(1); opacity:1;} }
 
         /* 抓謊翻牌層 */
         .reveal-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 100;
+            background: rgba(0,0,0,0.9); z-index: 100;
             display: none; flex-direction: column; align-items: center; justify-content: center;
+            backdrop-filter: blur(8px);
         }
         .reveal-stage { display: flex; gap: 15px; margin: 30px 0; perspective: 1000px; }
-        .reveal-card-wrapper { width: 60px; height: 90px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+        .reveal-card-wrapper { width: 70px; height: 100px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
         .reveal-card-wrapper.flipped { transform: rotateY(180deg); }
         .reveal-face, .reveal-back {
             position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
-            border-radius: 6px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.5em; font-weight: bold; text-shadow: none;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.8em; font-weight: bold; text-shadow: none;
         }
-        .reveal-back { background: repeating-linear-gradient(45deg, #922b21, #922b21 5px, #a93226 5px, #a93226 10px); border: 2px solid white; }
+        .reveal-back { background: repeating-linear-gradient(45deg, #7f1d1d, #7f1d1d 5px, #991b1b 5px, #991b1b 10px); border: 2px solid white; box-shadow: 0 4px 10px black; }
         .reveal-face { background: white; transform: rotateY(180deg); border: 4px solid transparent; }
-        .reveal-face.correct { border-color: #2ecc71; box-shadow: 0 0 20px #2ecc71; }
-        .reveal-face.wrong { border-color: #e74c3c; box-shadow: 0 0 20px #e74c3c; color: #e74c3c; }
+        .reveal-face.correct { border-color: #10b981; box-shadow: 0 0 30px #10b981; }
+        .reveal-face.wrong { border-color: #ef4444; box-shadow: 0 0 30px #ef4444; color: #ef4444; }
 
         /* 槍擊動畫層 */
         .gun-overlay {
@@ -248,10 +409,10 @@
             z-index: 200; pointer-events: none; display: none;
             align-items: center; justify-content: center; flex-direction: column;
         }
-        .gun-visual { font-size: 8em; animation: gunAim 1s ease-in-out infinite alternate; }
+        .gun-visual { font-size: 8em; filter: drop-shadow(0 0 20px rgba(0,0,0,0.8)); animation: gunAim 1s ease-in-out infinite alternate; }
         .bang-visual { 
-            position: absolute; font-size: 10em; color: yellow; font-weight: 900; 
-            text-shadow: 0 0 20px red; opacity: 0; transform: scale(0);
+            position: absolute; font-size: 10em; color: #facc15; font-weight: 900; 
+            text-shadow: 0 0 20px #ef4444, 0 0 40px #b91c1c; opacity: 0; transform: scale(0);
         }
         .bang-animate { animation: bangPop 0.3s forwards; }
 
@@ -260,29 +421,51 @@
         @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
         .shaking { animation: shake 0.5s; }
 
-        /* --- 勝利特效 & 巨大按鈕 (來自 norma) --- */
-        #win-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; }
-        #win-message { font-size: 3em; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.5); text-align: center; padding: 0 20px;}
-        .big-reset-btn { padding: 20px 40px; font-size: 24px; font-weight: bold; background: #28a745; color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); transition: 0.3s; margin-top: 20px;}
-        .big-reset-btn:hover { transform: scale(1.1); }
-        .waiting-text { animation: pulse 1.5s infinite; color: #f1c40f; }
-        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        /* --- 勝利特效 & 巨大按鈕 (Dark Version) --- */
+        #win-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(15, 23, 42, 0.95); display: none; 
+            flex-direction: column; justify-content: center; align-items: center; 
+            z-index: 1000; color: white; backdrop-filter: blur(10px);
+        }
+        #win-message { 
+            font-size: 3.5em; margin-bottom: 20px; 
+            background: linear-gradient(to right, #facc15, #f59e0b);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(245, 158, 11, 0.4); text-align: center; padding: 0 20px;
+            animation: popIn 0.5s;
+        }
+        .big-reset-btn { 
+            padding: 20px 50px; font-size: 24px; font-weight: bold; 
+            background: var(--accent-green); color: white; border: none; border-radius: 50px; 
+            cursor: pointer; box-shadow: 0 0 30px rgba(16, 185, 129, 0.5); 
+            transition: 0.3s; margin-top: 20px; text-transform: uppercase;
+        }
+        .big-reset-btn:hover { transform: scale(1.1); box-shadow: 0 0 50px rgba(16, 185, 129, 0.8); }
+        .waiting-text { animation: pulse 1.5s infinite; color: #facc15; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 10px #facc15; } 100% { opacity: 0.6; } }
+
+        /* 滾動條美化 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
     </style>
 </head>
 <body>
 
 <div id="mainMenu" class="container">
-    <h1>自定義線上遊戲</h1>
+    <h1 style="background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">🎮 遊戲大廳</h1>
     <div class="stats-bar">
         <div class="stat-item">大廳閒置: <b id="lobbyCount">0</b></div>
         <div class="stat-item">遊戲中: <b id="inGameCount">0</b></div>
     </div>
 
     <div id="allRoomsContainer">搜尋中...</div>
-    <hr>
-    <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 圈圈叉叉⭕❌</button>
-    <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 (重力落下)</button>
+    <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
+    <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 圈圈叉叉 ⭕❌</button>
+    <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 (🔴🔵)</button>
     <button class="menu-btn btn-liar" onclick="showCreateRoom('liar')">創立 騙子桌遊 🔫🃏</button>
 </div>
 
@@ -292,10 +475,10 @@
     <div class="input-group"><label>房間名稱:</label><input type="text" id="roomName" placeholder="未命名房間"></div>
     <div class="input-group"><label>設定密碼:</label><input type="password" id="roomPass" placeholder="可留空"></div>
 
-    <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
+    <hr style="margin: 15px 0; border: 0; border-top: 1px solid rgba(255,255,255,0.1);">
     
     <div id="normalSettings">
-        <div style="text-align: left; font-weight: bold; margin-bottom: 5px;">遊戲規則設定:</div>
+        <div style="text-align: left; font-weight: bold; margin-bottom: 5px; color:#cbd5e1;">遊戲規則設定:</div>
         <div class="settings-row">
             <div class="settings-item">
                 <label>高 (Rows)</label>
@@ -310,16 +493,16 @@
                 <input type="number" id="inputWin" min="3" max="10" value="3">
             </div>
         </div>
-        <div id="infinite-hint" style="font-size: 0.8em; color: #6f42c1; margin-bottom: 10px; display:none;">
+        <div id="infinite-hint" style="font-size: 0.85em; color: #a78bfa; margin-bottom: 10px; display:none; background: rgba(139, 92, 246, 0.1); padding: 8px; border-radius: 6px;">
             ※ 無限模式：雙方最多 3 顆棋子，下第 4 顆最早的消失。
         </div>
     </div>
 
-    <div id="liarSettings" class="hidden" style="text-align: left; font-size: 0.9em; background:#fff3e0; padding:15px; border-radius:8px; margin:15px 0; border-left: 5px solid #d35400;">
-        <h4 style="margin:0 0 5px 0; color:#d35400;">🔫 騙子酒館規則：</h4>
+    <div id="liarSettings" class="hidden" style="text-align: left; font-size: 0.9em; padding:15px; border-radius:8px; margin:15px 0;">
+        <h4 style="margin:0 0 5px 0;">🔫 騙子酒館規則：</h4>
         1. 牌庫含 A, Q, K (各6張) + Joker (2張)。<br>
         2. 系統指定目標 (如 King)，玩家必須出牌並宣稱符合。<br>
-        3. 若懷疑上家說謊，可按下 <b style="color:#c0392b">LIAR!</b> 抓謊。<br>
+        3. 若懷疑上家說謊，可按下 <b style="color:#ef4444">LIAR!</b> 抓謊。<br>
         4. <b>抓對了</b>：說謊者接受左輪制裁；<b>抓錯了</b>：抓人者接受制裁。<br>
         5. <b>出完牌</b>：3人以上時，安全上岸 (跳過回合)；若剩兩人時上家出完牌，下家必須強制抓謊。<br>
         6. 1/6 機率觸發實彈，死亡淘汰。
@@ -328,39 +511,39 @@
     <button id="btn-confirm" class="menu-btn" onclick="createRoom()">確認創立</button>
     <button id="btn-infinite" class="menu-btn btn-purple hidden" onclick="createInfiniteRoom()">創立 無限圈圈叉叉 (只留三子)</button>
     
-    <button onclick="showSection('mainMenu')">返回</button>
+    <button class="btn-sm" style="background:transparent; border:1px solid #64748b; margin-top:10px; color:#cbd5e1;" onclick="showSection('mainMenu')">返回大廳</button>
 </div>
 
 <div id="gameArea" class="container hidden">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 id="roomDisplayInfo" style="margin:5px 0;"></h3>
-        <button class="btn-sm btn-red" onclick="leaveRoom()">離開</button>
+        <h3 id="roomDisplayInfo" style="margin:5px 0; color: #fff;"></h3>
+        <button class="btn-sm btn-red" onclick="leaveRoom()">離開房間</button>
     </div>
-    <div id="gameMetaInfo" style="font-size: 0.85em; color: #666; margin-bottom: 5px;"></div>
+    <div id="gameMetaInfo" style="font-size: 0.85em; color: #94a3b8; margin-bottom: 10px;"></div>
     
-    <div id="status" style="font-weight: bold; color: #d9534f; margin: 5px 0;">載入中...</div>
+    <div id="status" style="font-weight: bold; color: #f87171; margin: 10px 0; font-size: 1.1em; text-shadow: 0 0 10px rgba(248, 113, 113, 0.3);">載入中...</div>
     
     <div id="floating-chat-zone" class="floating-chat-container"></div>
 
     <div id="ttt-board" class="hidden"></div>
     <div id="c4-game-wrapper" class="hidden">
-        <div class="color-pickers">
-            <label class="color-label">P1色: <input type="color" id="p1ColorPicker" value="#ff4d4d"></label>
-            <label class="color-label">P2色: <input type="color" id="p2ColorPicker" value="#ffd93d"></label>
+        <div class="color-pickers" style="margin-bottom: 10px; font-size: 0.9em; color: #cbd5e1;">
+            <label class="color-label">P1色: <input type="color" id="p1ColorPicker" value="#f87171" style="padding:0; width:30px; height:30px; border:none; vertical-align:middle;"></label>
+            <label class="color-label" style="margin-left:15px;">P2色: <input type="color" id="p2ColorPicker" value="#facc15" style="padding:0; width:30px; height:30px; border:none; vertical-align:middle;"></label>
         </div>
         <div id="c4-board" class="c4-board"></div>
     </div>
 
     <div id="liar-wrapper" class="hidden">
         <div class="liar-header">
-            <span id="liar-status-text" style="font-size:0.9em;">等待玩家...</span>
+            <span id="liar-status-text" style="font-size:0.9em; font-weight:bold;">等待玩家...</span>
             <div id="liar-target-display" class="target-card-display hidden">K</div>
         </div>
         
         <div class="opponents-row" id="liar-opponents"></div>
 
         <div class="liar-table-center">
-            <div id="last-move-info" style="margin-bottom: 10px; font-size:1.1em; color:#fff; background:#d35400; padding:5px 15px; border-radius:20px; box-shadow: 0 4px 5px rgba(0,0,0,0.3); z-index: 10; font-weight: bold;"></div>
+            <div id="last-move-info" style="margin-bottom: 10px; font-size:1.1em; color:#fff; background:#ea580c; padding:6px 20px; border-radius:20px; box-shadow: 0 4px 10px rgba(234, 88, 12, 0.5); z-index: 10; font-weight: bold;"></div>
             
             <div id="liar-stack-area" style="position:relative; width:60px; height:90px; border: 2px dashed rgba(255,255,255,0.2); border-radius:6px;">
             </div>
@@ -377,7 +560,7 @@
         </div>
 
         <div id="liar-reveal-overlay" class="reveal-overlay">
-            <h2 style="color:white; text-shadow:0 0 10px black;">檢驗中...</h2>
+            <h2 style="color:white; text-shadow:0 0 20px #ef4444;">檢驗中...</h2>
             <div class="reveal-stage" id="reveal-cards-container"></div>
             <div id="reveal-verdict" style="font-size:2em; font-weight:900; margin-top:20px; min-height:50px;"></div>
         </div>
@@ -390,14 +573,14 @@
         <div id="gun-anim-overlay" class="gun-overlay">
             <div class="gun-visual">🔫</div>
             <div class="bang-visual">BANG!</div>
-            <div id="gun-result-text" style="color:white; font-size:1.5em; font-weight:bold; margin-top:20px; background:rgba(0,0,0,0.7); padding:10px;"></div>
+            <div id="gun-result-text" style="color:white; font-size:1.5em; font-weight:bold; margin-top:20px; background:rgba(0,0,0,0.8); padding:15px; border-radius:10px; border:1px solid #444;"></div>
         </div>
     </div>
 
-    <button id="btn-undo" class="btn-undo" onclick="undoStep()">⬅ 悔棋</button>
+    <button id="btn-undo" class="btn-undo" onclick="undoStep()">⬅ 悔棋 (Undo)</button>
 
     <div id="chat-area">
-        <div style="margin-bottom: 5px; font-size: 0.9em; color: #555;">
+        <div style="margin-bottom: 8px; font-size: 0.9em; color: var(--text-muted);">
             我是: <span id="myNameDisplay" class="editable-name" onclick="editName()">玩家</span> ✎
         </div>
         <div id="chat-msgs"></div>
@@ -407,15 +590,15 @@
         </div>
     </div>
 
-    <div style="margin-top: 20px;">
-        <button id="btn-restart-gen" onclick="resetGame()">重新開始</button>
+    <div style="margin-top: 25px;">
+        <button id="btn-restart-gen" style="background:transparent; color:#64748b; border:1px solid #334155; padding:8px 20px; border-radius:20px; cursor:pointer;" onclick="resetGame()">重置遊戲</button>
     </div>
 </div>
 
 <div id="win-overlay">
     <h1 id="win-message">勝利！</h1>
     <button class="big-reset-btn" onclick="resetGame()">🔄 重新開始 🔄</button>
-    <button style="margin-top:15px; background:none; border:1px solid white; color:white; padding:5px 10px; border-radius:20px;" onclick="closeWinOverlay()">暫時關閉</button>
+    <button style="margin-top:25px; background:none; border:1px solid rgba(255,255,255,0.3); color:rgba(255,255,255,0.7); padding:8px 20px; border-radius:20px; cursor:pointer;" onclick="closeWinOverlay()">暫時關閉</button>
 </div>
 
 <script type="module">
@@ -489,7 +672,7 @@
         totalInGameCount = 0;
 
         if (!rooms) { 
-            container.innerHTML = "<p>目前沒有房間，來開一個吧！</p>"; 
+            container.innerHTML = "<p style='color:#94a3b8; margin-top:20px;'>目前沒有房間，來開一個吧！</p>"; 
             updateStatsUI();
             return; 
         }
@@ -720,13 +903,13 @@
             document.getElementById('c4-game-wrapper').classList.remove('hidden');
             renderC4Board(data, rows, cols);
              document.getElementById('status').innerText = `輪到: ${currentPlayerName} ${data.turn%2===0?'(P1)':'(P2)'}`;
-             document.getElementById('status').style.color = (data.turn%2===0) ? (data.p1Color||'#ff4d4d') : (data.p2Color||'#ffd93d');
+             document.getElementById('status').style.color = (data.turn%2===0) ? (data.p1Color||'#f87171') : (data.p2Color||'#facc15');
         } else {
             document.getElementById('c4-game-wrapper').classList.add('hidden');
             document.getElementById('ttt-board').classList.remove('hidden');
             renderTTTBoard(data, rows, cols);
             document.getElementById('status').innerText = `輪到: ${currentPlayerName} (${data.turn%2===0?'X':'O'})`;
-            document.getElementById('status').style.color = '#d9534f';
+            document.getElementById('status').style.color = '#f87171';
         }
         checkBoardWinner(data);
     }
@@ -787,7 +970,7 @@
             document.getElementById('liar-reveal-overlay').style.display = 'none';
             document.getElementById('gun-anim-overlay').style.display = 'none';
             targetEl.classList.remove('hidden');
-            targetEl.innerText = `目標: ${data.targetRank}`;
+            targetEl.innerText = `當局牌: ${data.targetRank}`;
             myGunDiv.classList.remove('hidden');
             
             const curPlayerKey = playerKeys[data.turnIndex];
@@ -815,7 +998,7 @@
             
             if (forceCall) {
                 if (isMyTurn) {
-                    statusEl.innerHTML = `<b style="color:#e74c3c">沒牌了 Liar!</b>`;
+                    statusEl.innerHTML = `<b style="color:#ef4444">沒牌了 Liar!</b>`;
                     document.getElementById('liar-controls').classList.add('hidden');
 
                     if (!window.liarAutoCallPending) {
@@ -834,7 +1017,7 @@
                 document.getElementById('liar-controls').classList.remove('hidden'); 
 
                 statusEl.innerHTML = isMyTurn ? 
-                    `<b style="color:#f1c40f">🔴 輪到你了！請出牌</b>` : 
+                    `<b style="color:#facc15">🔴 輪到你了！請出牌</b>` : 
                     `等待 ${curPlayer?.name || '對手'} 出牌...`;
             }
 
@@ -912,11 +1095,11 @@
             }
 
             div.innerHTML = `
-                <div style="font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${u.name}</div>
+                <div style="font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:white;">${u.name}</div>
                 <div style="font-size:1.5em; margin:5px 0;">🃏 ${handSize}</div>
                 <div class="cylinder-display">${bulletsHTML}</div>
                 ${gun.isDead ? '<span style="position:absolute; top:30%; left:25%; font-size:2em;">💀</span>' : ''}
-                ${statusClass==='escaped' ? '<span style="position:absolute; top:30%; left:20%; font-size:1.5em; color:#2ecc71; font-weight:bold;">SAFE</span>' : ''}
+                ${statusClass==='escaped' ? '<span style="position:absolute; top:30%; left:20%; font-size:1.5em; color:#10b981; font-weight:bold;">SAFE</span>' : ''}
             `;
             oppRow.appendChild(div);
         });
@@ -932,12 +1115,12 @@
             myGunDiv.innerHTML = `
                 <div style="font-size:0.8em; margin-bottom:5px;">我的左輪</div>
                 <div class="cylinder-display">${bulletsHTML}</div>
-                <div style="font-size:0.7em; margin-top:3px; color:#bdc3c7;">
+                <div style="font-size:0.7em; margin-top:3px; color:#94a3b8;">
                     ${myGunInfo.isDead ? '已死亡' : `剩餘機率: 1/${6 - myGunInfo.chamber}`}
                 </div>
             `;
             if (myGunInfo.isDead) myGunDiv.style.borderColor = "red";
-            else myGunDiv.style.borderColor = "#7f8c8d";
+            else myGunDiv.style.borderColor = "#4b5563";
         }
 
 
@@ -1058,8 +1241,8 @@
         }
 
         verdict.innerHTML = res.isLiar 
-            ? `<span style="color:#e74c3c">抓到了！說謊！</span><br><span style="font-size:0.5em">輸家: ${res.loserName}</span>` 
-            : `<span style="color:#2ecc71">誠實！抓錯了！</span><br><span style="font-size:0.5em">輸家: ${res.loserName}</span>`;
+            ? `<span style="color:#ef4444">抓到了！說謊！</span><br><span style="font-size:0.5em">輸家: ${res.loserName}</span>` 
+            : `<span style="color:#10b981">誠實！抓錯了！</span><br><span style="font-size:0.5em">輸家: ${res.loserName}</span>`;
         
         await new Promise(r => setTimeout(r, 1500));
 
@@ -1092,7 +1275,7 @@
         if (playerGun.isDead) {
             txt.innerHTML = `<span style="color:red; font-size:1.5em;">💀 死亡 💀</span>`;
         } else {
-            txt.innerHTML = `<span style="color:#2ecc71">恭喜倖存😎(空包彈)</span><br>剩餘: ${6 - playerGun.chamber}發`;
+            txt.innerHTML = `<span style="color:#10b981">恭喜倖存😎(空包彈)</span><br>剩餘: ${6 - playerGun.chamber}發`;
         }
 
         await new Promise(r => setTimeout(r, 2000));
@@ -1402,7 +1585,7 @@
             const userList = Object.values(data.users);
             let winnerName = (winner === 'X' || winner === 1) ? (userList[0]?.name||"P1") : (userList[1]?.name||"P2");
             msgEl.innerText = `🎉 恭喜 ${winnerName} 獲勝！ 🎉`;
-            msgEl.style.color = (winner === 'X' || winner === 1) ? '#ff4d4d' : '#ffd93d';
+            msgEl.style.color = (winner === 'X' || winner === 1) ? '#f87171' : '#facc15';
             document.getElementById('win-overlay').style.display = 'flex';
         } else if (data.type !== 'ttt-infinite') {
             const isFull = data.board.every(c => c !== 0 && c !== "");
