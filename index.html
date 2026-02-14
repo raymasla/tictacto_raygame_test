@@ -505,7 +505,8 @@
         3. 若懷疑上家說謊，可按下 <b style="color:#ef4444">LIAR!</b> 抓謊。<br>
         4. <b>抓對了</b>：說謊者接受左輪制裁；<b>抓錯了</b>：抓人者接受制裁。<br>
         5. <b>出完牌</b>：3人以上時，安全上岸 (跳過回合)；若剩兩人時上家出完牌，下家必須強制抓謊。<br>
-        6. 1/6 機率觸發實彈，死亡淘汰。
+        6. 1/6 機率觸發實彈，死亡淘汰。<br>
+        7. <b style="color:#facc15">多人模式(5人+)</b>: 牌庫自動擴充至 8組 A,Q,K + 4 Joker。
     </div>
 
     <button id="btn-confirm" class="menu-btn" onclick="createRoom()">確認創立</button>
@@ -1166,7 +1167,7 @@
         }
     }
 
-    // --- 開場牌堆展示 ---
+    // --- 開場牌堆展示 (支援多人模式動態展示) ---
     function renderIntroDeck() {
         const overlay = document.getElementById('intro-overlay');
         const grid = document.getElementById('intro-grid');
@@ -1175,25 +1176,40 @@
         grid.innerHTML = "";
         side.innerHTML = "";
 
-        const suits = ['♠', '♥', '♦', '♣', '♠', '♥'];
-        ['A', 'Q', 'K'].forEach(rank => {
-            suits.forEach((suit, idx) => {
+        // 讀取牌庫設定 (相容舊版房間)
+        let suitCount = 6;
+        let jokerCount = 2;
+        if (roomDataCache && roomDataCache.deckMeta) {
+            suitCount = roomDataCache.deckMeta.suitCount;
+            jokerCount = roomDataCache.deckMeta.jokerCount;
+        }
+
+        // 動態調整網格寬度以容納更多牌
+        grid.style.gridTemplateColumns = `repeat(${suitCount}, 1fr)`;
+
+        const baseSuits = ['♠', '♥', '♦', '♣'];
+        
+        ['A', 'Q', 'K'].forEach((rank, rIdx) => {
+            for(let i = 0; i < suitCount; i++) {
+                const suit = baseSuits[i % 4];
                 const div = document.createElement('div');
                 div.className = `intro-card-sm ${['♥','♦'].includes(suit)?'red':'black'}`;
                 div.innerText = suit + rank;
-                div.style.animationDelay = (idx * 0.05 + ['A','Q','K'].indexOf(rank) * 0.3) + 's';
+                // 交錯動畫延遲
+                div.style.animationDelay = (i * 0.05 + rIdx * 0.3) + 's';
                 grid.appendChild(div);
-            });
+            }
         });
 
-        ['🤡', '🤡'].forEach((j, i) => {
+        // 渲染 Joker
+        for(let i = 0; i < jokerCount; i++) {
             const div = document.createElement('div');
             div.className = 'intro-card-sm joker';
             div.innerText = 'JK';
             div.style.color = '#8e44ad';
             div.style.animationDelay = (1 + i * 0.2) + 's';
             side.appendChild(div);
-        });
+        }
     }
 
     // --- 動畫邏輯 ---
@@ -1290,28 +1306,72 @@
         processingAction = false; // 確保重置動作鎖
     }
 
-    // --- 騙子桌遊 操作函式 (加入防呆) ---
+    // --- 騙子桌遊 操作函式 (加入防呆與多人模式機制) ---
     window.startLiarGame = () => {
         if (isAnimating || processingAction) return; // 鎖定檢查
 
+        // 1. 判斷人數以決定牌庫大小
+        const players = Object.keys(roomDataCache.users);
+        const playerCount = players.length;
+        
+        // 預設標準：6組花色 (18張) + 2 Joker = 20張 (每人5張可供4人)
+        let suitCount = 6; 
+        let jokerCount = 2;
+
+        // 多人模式 (>=5人)：8組花色 (24張) + 4 Joker = 28張 (每人5張可供5.6人 -> 5人)
+        if (playerCount >= 5) {
+            suitCount = 8;
+            jokerCount = 4;
+        }
+
+        // 自動擴充檢查：若人數真的非常多(6人+)，確保每人有5張牌
+        // 總牌數 = suitCount * 3 + jokerCount
+        while ((suitCount * 3 + jokerCount) < (playerCount * 5)) {
+            suitCount++; // 增加一組花色
+            // 為了保持混亂度，每增加兩組花色多加一張鬼牌
+            if (suitCount % 2 === 0) jokerCount++;
+        }
+
         const ranks = ['A', 'Q', 'K'];
-        const suits = ['♠', '♥', '♦', '♣', '♠', '♥'];
+        // 循環使用四種花色符號
+        const baseSuits = ['♠', '♥', '♦', '♣'];
+        
         let deck = [];
-        ranks.forEach(r => suits.forEach(s => deck.push({suit:s, rank:r})));
-        deck.push({suit:'', rank:'Joker'}, {suit:'', rank:'Joker'});
+        
+        // 產生 A, Q, K
+        ranks.forEach(r => {
+            for (let i = 0; i < suitCount; i++) {
+                deck.push({suit: baseSuits[i % 4], rank: r});
+            }
+        });
+        
+        // 產生 Joker
+        for (let i = 0; i < jokerCount; i++) {
+            deck.push({suit: '', rank: 'Joker'});
+        }
+
         deck.sort(() => Math.random() - 0.5);
 
-        const players = Object.keys(roomDataCache.users);
+        // 發牌
         const hands = {};
-        players.forEach(p => hands[p] = deck.splice(0, 5));
+        // 安全檢查，避免人數超出牌庫極限 (雖然上面已經擴充了)
+        players.forEach(p => {
+            if (deck.length >= 5) {
+                hands[p] = deck.splice(0, 5);
+            } else {
+                hands[p] = deck.splice(0, deck.length); // 應該不會發生
+            }
+        });
         
         const guns = {};
         players.forEach(p => guns[p] = { chamber: 0, bulletPos: Math.floor(Math.random()*6), isDead: false });
 
+        // 寫入 Firebase，包含 deckMeta 供客戶端動畫使用
         update(ref(db, `ongame_room/${currentRoomId}`), {
             gameState: 'intro',
             status: 'playing', 
-            playerOrder: players
+            playerOrder: players,
+            deckMeta: { suitCount, jokerCount }
         });
 
         setTimeout(() => {
@@ -1425,9 +1485,10 @@
     function nextLiarRound(rData) {
         const players = rData.playerOrder;
         const alive = players.filter(p => !rData.guns[p].isDead);
-        
-        if (alive.length <= 1) {
-            const winnerName = alive.length > 0 ? rData.users[alive[0]].name : "無人";
+        const playerCount = alive.length;
+
+        if (playerCount <= 1) {
+            const winnerName = playerCount > 0 ? rData.users[alive[0]].name : "無人";
             update(ref(db, `ongame_room/${currentRoomId}`), {
                 gameState: 'ended',
                 winnerName: winnerName
@@ -1435,11 +1496,33 @@
             return;
         }
 
+        // 下一局重新洗牌邏輯 (需同樣套用多人規則)
+        let suitCount = 6; 
+        let jokerCount = 2;
+
+        if (playerCount >= 5) {
+            suitCount = 8;
+            jokerCount = 4;
+        }
+
+        while ((suitCount * 3 + jokerCount) < (playerCount * 5)) {
+            suitCount++;
+            if (suitCount % 2 === 0) jokerCount++;
+        }
+
         const ranks = ['A', 'Q', 'K'];
-        const suits = ['♠', '♥', '♦', '♣', '♠', '♥'];
+        const baseSuits = ['♠', '♥', '♦', '♣'];
         let deck = [];
-        ranks.forEach(r => suits.forEach(s => deck.push({suit:s, rank:r})));
-        deck.push({suit:'', rank:'Joker'}, {suit:'', rank:'Joker'});
+        
+        ranks.forEach(r => {
+            for (let i = 0; i < suitCount; i++) {
+                deck.push({suit: baseSuits[i % 4], rank: r});
+            }
+        });
+        
+        for (let i = 0; i < jokerCount; i++) {
+            deck.push({suit: '', rank: 'Joker'});
+        }
         deck.sort(() => Math.random() - 0.5);
         
         const hands = {};
@@ -1451,7 +1534,8 @@
         update(ref(db, `ongame_room/${currentRoomId}`), {
             gameState: 'playing', hands, deck, stack: [],
             targetRank: ranks[Math.floor(Math.random()*3)],
-            turnIndex: startIdx, challengeResult: null
+            turnIndex: startIdx, challengeResult: null,
+            deckMeta: { suitCount, jokerCount } // 更新 meta 以防人數變動影響顯示
         });
     }
     
