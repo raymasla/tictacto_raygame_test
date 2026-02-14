@@ -3,108 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>有趣的連線遊戲</title>
+    <title>新遊戲！</title>
     <style>
-        /* --- 通用樣式 --- */
-        body { font-family: 'PingFang TC', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: manipulation; transition: background 0.5s; }
-        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 450px; text-align: center; margin-bottom: 20px; position: relative; z-index: 10; }
+        /* --- 通用樣式 (來自 norma) --- */
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: manipulation; transition: background 0.5s; overflow-x: hidden; }
+        .container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 500px; text-align: center; margin-bottom: 20px; position: relative; z-index: 10; transition: 0.3s; }
         .hidden { display: none !important; }
         
-        /* 按鈕與列表 */
-        .menu-btn { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; background: #007bff; color: white; transition: 0.2s; }
-        .menu-btn:hover { background: #0056b3; }
+        /* 按鈕與列表 (來自 norma) */
+        .menu-btn { width: 100%; padding: 15px; margin: 10px 0; font-size: 18px; cursor: pointer; border: none; border-radius: 8px; background: #007bff; color: white; transition: 0.2s; font-weight: bold; }
+        .menu-btn:hover { background: #0056b3; transform: translateY(-2px); }
+        .menu-btn:active { transform: translateY(0); }
         .btn-c4 { background: #2c3e50; } 
-        .btn-purple { background: #6f42c1; } /* 新增紫色按鈕樣式 */
-        .btn-purple:hover { background: #59359a; }
+        .btn-purple { background: #6f42c1; }
+        .btn-liar { background: #d35400; box-shadow: 0 4px 0 #a04000; }
+        .btn-liar:hover { background: #e67e22; }
         
-        /* 小按鈕樣式 */
         .btn-sm { border: none; padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9em; margin-left: 5px; color: white; }
         .btn-green { background: #28a745; }
         .btn-red { background: #dc3545; }
         .btn-undo { background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 10px; }
 
-        /* 房間列表項目 */
+        /* 房間列表項目 (來自 norma) */
         .room-item { border: 1px solid #ddd; padding: 12px; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; background: #fafafa; }
         .room-info { text-align: left; display: flex; flex-direction: column; }
         .room-name { font-weight: bold; font-size: 1.1em; }
         .lock-icon { font-size: 0.8em; margin-left: 5px; color: #d9534f; }
         .room-meta { font-size: 0.75em; color: #888; margin-top: 2px; }
-        
-        /* 首頁統計資訊 */
+        .status-badge { font-size: 0.7em; padding: 2px 6px; border-radius: 4px; margin-left: 5px; }
+        .status-wait { background: #28a745; color: white; }
+        .status-play { background: #dc3545; color: white; }
+
+        /* 統計與輸入框 (來自 norma) */
         .stats-bar { background: #e9ecef; padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em; color: #555; display: flex; justify-content: space-around; }
         .stat-item b { color: #007bff; font-size: 1.2em; }
-
-        /* 輸入框 */
         input { padding: 8px; text-align: center; border: 1px solid #ccc; border-radius: 4px; }
         .input-group { margin: 10px 0; text-align: left; display: flex; align-items: center; justify-content: space-between; }
-        .input-group label { font-weight: bold; width: 80px;}
-        .input-group input { flex: 1; }
-        
-        /* 設定數字輸入框的小樣式 */
         .settings-row { display: flex; gap: 10px; margin: 10px 0; }
         .settings-item { flex: 1; display: flex; flex-direction: column; }
-        .settings-item label { font-size: 0.8em; color: #555; margin-bottom: 3px; font-weight: bold; }
-        .settings-item input { width: 100%; box-sizing: border-box; }
-
-        /* --- 遊戲區塊 --- */
-        #status { font-weight: bold; color: #d9534f; margin: 10px 0; min-height: 24px; }
-
-        /* --- 聊天室 --- */
+        
+        /* 聊天室 (來自 norma) */
         #chat-area { margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; text-align: left; }
-        #chat-msgs { height: 120px; overflow-y: auto; background: #f8f9fa; border-radius: 4px; padding: 5px; font-size: 0.85em; margin-bottom: 5px; border: 1px solid #ddd; }
+        #chat-msgs { height: 100px; overflow-y: auto; background: #f8f9fa; border-radius: 4px; padding: 5px; font-size: 0.85em; margin-bottom: 5px; border: 1px solid #ddd; }
         .chat-input-group { display: flex; gap: 5px; }
         .chat-input-group input { flex: 1; text-align: left; font-size: 0.9em; }
-        
-        /* 暱稱編輯樣式 */
         .editable-name { color: #007bff; font-weight: bold; cursor: pointer; border-bottom: 1px dashed #007bff; }
-        .editable-name:hover { color: #0056b3; border-bottom-style: solid; }
 
-        /* --- 四連棋樣式 --- */
-        :root { 
-            --c4-cell-size: 40px; 
-            --p1-color: #ff4d4d;
-            --p2-color: #ffd93d;
-        }
-        #c4-game-wrapper { display: flex; flex-direction: column; align-items: center; background-color: rgba(44, 62, 80, 0.9); padding: 15px; border-radius: 10px; transition: 0.5s; max-width: 100%; overflow-x: auto; }
-        .c4-board { display: grid; gap: 5px; padding: 10px; background: #3498db; border-radius: 10px; margin: 0 auto; }
-        .c4-cell { width: var(--c4-cell-size); height: var(--c4-cell-size); background-color: #1a252f; border-radius: 50%; position: relative; }
+        /* --- 棋盤遊戲樣式 (來自 norma) --- */
+        #gameArea { transition: 0.3s; }
+        :root { --c4-cell-size: 40px; --p1-color: #ff4d4d; --p2-color: #ffd93d; }
+        #c4-game-wrapper { display: flex; flex-direction: column; align-items: center; background-color: rgba(44, 62, 80, 0.9); padding: 15px; border-radius: 10px; overflow-x: auto; }
+        .c4-board { display: grid; gap: 5px; padding: 10px; background: #3498db; border-radius: 10px; }
+        .c4-cell { width: var(--c4-cell-size); height: var(--c4-cell-size); background-color: #1a252f; border-radius: 50%; }
         .piece { width: 100%; height: 100%; border-radius: 50%; animation: dropAnim 0.5s forwards; box-shadow: inset -3px -3px 5px rgba(0,0,0,0.3); }
-        
-        .p1 { background: var(--p1-color); }
-        .p2 { background: var(--p2-color); }
-        
+        .p1 { background: var(--p1-color); } .p2 { background: var(--p2-color); }
         @keyframes dropAnim { from { transform: translateY(-200px); } to { transform: translateY(0); } }
-
-        .color-pickers { margin-bottom: 10px; display: flex; gap: 10px; justify-content: center; background: rgba(255,255,255,0.1); padding: 5px; border-radius: 8px; }
-        .color-label { color: white; font-size: 0.8em; display: flex; align-items: center; gap: 5px; }
-        input[type="color"] { border: none; width: 30px; height: 30px; padding: 0; cursor: pointer; background: none; }
-
-        /* --- 圈圈叉叉 (通用棋盤) --- */
-        #ttt-board { display: grid; gap: 5px; margin: 10px auto; background: #ccc; padding: 5px; border-radius: 5px; max-width: 100%; overflow-x: auto;}
-        .ttt-cell { background: white; min-width: 40px; min-height: 40px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; position: relative;}
         
-        /* 無限模式：即將消失的棋子特效 */
-        .about-to-die {
-            opacity: 0.4;
-            color: #d9534f;
-            border: 2px dashed #d9534f;
-            box-sizing: border-box;
+        #ttt-board { display: grid; gap: 5px; margin: 10px auto; background: #ccc; padding: 5px; border-radius: 5px; }
+        .ttt-cell { background: white; min-width: 40px; min-height: 40px; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; cursor: pointer; position: relative;}
+        .about-to-die { opacity: 0.4; color: #d9534f; border: 2px dashed #d9534f; box-sizing: border-box; }
+
+        /* ========================================= */
+        /* --- 移植版 騙子桌遊 (Liar's Deck) 樣式 --- */
+        /* ========================================= */
+        #liar-wrapper {
+            /* 木質邊框與質感牌桌 */
+            background: radial-gradient(circle, #2e7d32 0%, #1b5e20 100%);
+            border: 12px solid #5d4037;
+            border-radius: 20px;
+            box-shadow: inset 0 0 80px rgba(0,0,0,0.6), 0 10px 30px rgba(0,0,0,0.5);
+            padding: 10px;
+            color: #ecf0f1;
+            position: relative;
+            min-height: 550px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
-        .about-to-die::after {
-            content: '⚠️';
-            font-size: 10px;
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            opacity: 1;
+        
+        /* 頂部資訊 */
+        .liar-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.4); padding: 8px 15px; border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px);
+        }
+        .target-card-display {
+            font-size: 1.4em; font-weight: 800; padding: 5px 20px;
+            background: #f1c40f; color: #2c3e50; border-radius: 8px;
+            border: 3px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-shadow: none;
         }
 
-        /* --- 勝利特效 & 巨大按鈕 --- */
+        /* 牌桌中央 */
+        .liar-table-center {
+            flex: 1; position: relative;
+            display: flex; justify-content: center; align-items: center;
+            perspective: 800px;
+        }
+        
+        /* 卡牌設計 */
+        .card {
+            width: 55px; height: 80px;
+            background: #fff; border-radius: 6px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 1.2em; position: relative;
+            user-select: none; border: 1px solid #ccc;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-shadow: none;
+        }
+        .card.red { color: #c0392b; }
+        .card.black { color: #2c3e50; }
+        .card.joker { color: #8e44ad; border: 2px solid gold; }
+        .card-back {
+            background: repeating-linear-gradient(45deg, #922b21, #922b21 10px, #a93226 10px, #a93226 20px);
+            border: 2px solid #ecf0f1;
+        }
+        .card-back::after { content: "⚜️"; color: rgba(255,255,255,0.3); font-size: 24px; }
+
+        /* 對手區 */
+        .opponents-row { display: flex; justify-content: space-around; width: 100%; margin-top: 10px; }
+        .opponent {
+            background: rgba(0,0,0,0.6); padding: 8px; border-radius: 10px;
+            text-align: center; width: 80px; position: relative;
+            transition: 0.3s; border: 2px solid transparent;
+        }
+        .opponent.active { border-color: #f1c40f; background: rgba(241, 196, 15, 0.2); transform: scale(1.05); }
+        .opponent.dead { opacity: 0.6; filter: grayscale(100%); }
+        .opponent.escaped { border-color: #2ecc71; opacity: 0.8; }
+        
+        /* 槍膛顯示 */
+        .cylinder-display {
+            display: flex; justify-content: center; gap: 2px; margin-top: 5px;
+        }
+        .bullet-slot { width: 8px; height: 8px; border-radius: 50%; background: #555; border: 1px solid #888; }
+        .bullet-slot.fired { background: #000; box-shadow: inset 0 0 2px rgba(255,255,255,0.5); }
+        .bullet-slot.live { background: #e74c3c; box-shadow: 0 0 5px #c0392b; }
+
+        /* 我的槍枝狀態顯示 */
+        .my-gun-status {
+            position: absolute;
+            bottom: 140px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            border: 2px solid #7f8c8d;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            z-index: 50;
+        }
+
+        /* 手牌區 */
+        .my-hand-area {
+            height: 110px; display: flex; justify-content: center; align-items: center; gap: -10px;
+            padding-bottom: 10px; z-index: 20;
+        }
+        .my-hand-area .card { margin: 0 4px; cursor: pointer; transform-origin: bottom center; }
+        .my-hand-area .card:hover { transform: translateY(-15px) scale(1.1); z-index: 50; }
+        .my-hand-area .card.selected { transform: translateY(-25px); border: 3px solid #f1c40f; box-shadow: 0 0 15px #f1c40f; }
+
+        /* 遊戲按鈕區 */
+        .liar-controls { display: flex; gap: 15px; justify-content: center; margin-bottom: 10px; height: 50px; }
+        .btn-game { 
+            padding: 0 25px; border-radius: 25px; border: none; font-weight: 800; cursor: pointer; 
+            font-size: 1.1em; color: white; box-shadow: 0 5px 0 rgba(0,0,0,0.3); 
+            transition: 0.1s; text-transform: uppercase;
+        }
+        .btn-game:active { transform: translateY(4px); box-shadow: none; }
+        .btn-play { background: linear-gradient(to bottom, #3498db, #2980b9); }
+        .btn-liar-call { background: linear-gradient(to bottom, #e74c3c, #c0392b); font-size: 1.3em; letter-spacing: 1px; }
+        .btn-liar-call:disabled { background: #7f8c8d; cursor: not-allowed; box-shadow: none; transform: translateY(4px); }
+
+        /* --- 動畫特效層 --- */
+        /* 抓謊翻牌層 */
+        .reveal-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 100;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .reveal-stage { display: flex; gap: 15px; margin: 30px 0; perspective: 1000px; }
+        .reveal-card-wrapper { width: 60px; height: 90px; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+        .reveal-card-wrapper.flipped { transform: rotateY(180deg); }
+        .reveal-face, .reveal-back {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5em; font-weight: bold; text-shadow: none;
+        }
+        .reveal-back { background: repeating-linear-gradient(45deg, #922b21, #922b21 5px, #a93226 5px, #a93226 10px); border: 2px solid white; }
+        .reveal-face { background: white; transform: rotateY(180deg); border: 4px solid transparent; }
+        .reveal-face.correct { border-color: #2ecc71; box-shadow: 0 0 20px #2ecc71; }
+        .reveal-face.wrong { border-color: #e74c3c; box-shadow: 0 0 20px #e74c3c; color: #e74c3c; }
+
+        /* 槍擊動畫層 */
+        .gun-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 200; pointer-events: none; display: none;
+            align-items: center; justify-content: center; flex-direction: column;
+        }
+        .gun-visual { font-size: 8em; animation: gunAim 1s ease-in-out infinite alternate; }
+        .bang-visual { 
+            position: absolute; font-size: 10em; color: yellow; font-weight: 900; 
+            text-shadow: 0 0 20px red; opacity: 0; transform: scale(0);
+        }
+        .bang-animate { animation: bangPop 0.3s forwards; }
+
+        @keyframes gunAim { from { transform: rotate(-5deg); } to { transform: rotate(5deg); } }
+        @keyframes bangPop { 0% { opacity: 0; transform: scale(0.5); } 50% { opacity: 1; transform: scale(1.5); } 100% { opacity: 0; transform: scale(2); } }
+        @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+        .shaking { animation: shake 0.5s; }
+
+        /* --- 勝利特效 & 巨大按鈕 (來自 norma) --- */
         #win-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000; color: white; }
-        /* 這裡的顏色會由 JS 動態覆寫 */
-        #win-message { font-size: 3em; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        #win-message { font-size: 3em; margin-bottom: 10px; text-shadow: 0 0 10px rgba(255,255,255,0.5); text-align: center; padding: 0 20px;}
         .big-reset-btn { padding: 20px 40px; font-size: 24px; font-weight: bold; background: #28a745; color: white; border: none; border-radius: 50px; cursor: pointer; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); transition: 0.3s; margin-top: 20px;}
         .big-reset-btn:hover { transform: scale(1.1); }
+        .waiting-text { animation: pulse 1.5s infinite; color: #f1c40f; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
     </style>
 </head>
 <body>
@@ -120,6 +239,7 @@
     <hr>
     <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 圈圈叉叉⭕❌</button>
     <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 (重力落下)</button>
+    <button class="menu-btn btn-liar" onclick="showCreateRoom('liar')">創立 騙子桌遊 🔫🃏</button>
 </div>
 
 <div id="createRoomSection" class="container hidden">
@@ -130,27 +250,35 @@
 
     <hr style="margin: 15px 0; border: 0; border-top: 1px solid #eee;">
     
-    <div style="text-align: left; font-weight: bold; margin-bottom: 5px;">遊戲規則設定:</div>
-    <div class="settings-row">
-        <div class="settings-item">
-            <label>高 (Rows)</label>
-            <input type="number" id="inputRows" min="3" max="15" value="3">
+    <div id="normalSettings">
+        <div style="text-align: left; font-weight: bold; margin-bottom: 5px;">遊戲規則設定:</div>
+        <div class="settings-row">
+            <div class="settings-item">
+                <label>高 (Rows)</label>
+                <input type="number" id="inputRows" min="3" max="15" value="3">
+            </div>
+            <div class="settings-item">
+                <label>寬 (Cols)</label>
+                <input type="number" id="inputCols" min="3" max="15" value="3">
+            </div>
+            <div class="settings-item">
+                <label>連線數</label>
+                <input type="number" id="inputWin" min="3" max="10" value="3">
+            </div>
         </div>
-        <div class="settings-item">
-            <label>寬 (Cols)</label>
-            <input type="number" id="inputCols" min="3" max="15" value="3">
-        </div>
-        <div class="settings-item">
-            <label>連線數</label>
-            <input type="number" id="inputWin" min="3" max="10" value="3">
+        <div id="infinite-hint" style="font-size: 0.8em; color: #6f42c1; margin-bottom: 10px; display:none;">
+            ※ 無限模式：雙方最多 3 顆棋子，下第 4 顆最早的消失。
         </div>
     </div>
-    
-    <div id="infinite-hint" style="font-size: 0.8em; color: #6f42c1; margin-bottom: 10px; display:none;">
-        ※ 無限模式：雙方最多只能有 3 顆棋子，下第 4 顆時最早的會消失。建議 3x3。
-    </div>
-    <div id="normal-hint" style="font-size: 0.8em; color: #d9534f; margin-bottom: 10px;">
-        ※ 建議最大 15x15，以免手機畫面太擠
+
+    <div id="liarSettings" class="hidden" style="text-align: left; font-size: 0.9em; background:#fff3e0; padding:15px; border-radius:8px; margin:15px 0; border-left: 5px solid #d35400;">
+        <h4 style="margin:0 0 5px 0; color:#d35400;">🔫 騙子酒館規則：</h4>
+        1. 牌庫含 A, Q, K (各6張) + Joker (2張)。<br>
+        2. 系統指定目標 (如 King)，玩家必須出牌並宣稱符合。<br>
+        3. 若懷疑上家說謊，可按下 <b style="color:#c0392b">LIAR!</b> 抓謊。<br>
+        4. <b>抓對了</b>：說謊者接受左輪制裁；<b>抓錯了</b>：抓人者接受制裁。<br>
+        5. <b>出完牌</b>：3人以上時，安全上岸 (跳過回合)；若剩兩人時上家出完牌，下家必須強制抓謊。<br>
+        6. 1/6 機率觸發實彈，死亡淘汰。
     </div>
 
     <button id="btn-confirm" class="menu-btn" onclick="createRoom()">確認創立</button>
@@ -160,12 +288,15 @@
 </div>
 
 <div id="gameArea" class="container hidden">
-    <h3 id="roomDisplayInfo"></h3>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="roomDisplayInfo" style="margin:5px 0;"></h3>
+        <button class="btn-sm btn-red" onclick="leaveRoom()">離開</button>
+    </div>
     <div id="gameMetaInfo" style="font-size: 0.85em; color: #666; margin-bottom: 5px;"></div>
-    <div id="status">載入中...</div>
+    
+    <div id="status" style="font-weight: bold; color: #d9534f; margin: 5px 0;">載入中...</div>
 
     <div id="ttt-board" class="hidden"></div>
-    
     <div id="c4-game-wrapper" class="hidden">
         <div class="color-pickers">
             <label class="color-label">P1色: <input type="color" id="p1ColorPicker" value="#ff4d4d"></label>
@@ -174,13 +305,49 @@
         <div id="c4-board" class="c4-board"></div>
     </div>
 
-    <button class="btn-undo" onclick="undoStep()">⬅ 悔棋 (回上一步)</button>
+    <div id="liar-wrapper" class="hidden">
+        <div class="liar-header">
+            <span id="liar-status-text" style="font-size:0.9em;">等待玩家...</span>
+            <div id="liar-target-display" class="target-card-display hidden">K</div>
+        </div>
+        
+        <div class="opponents-row" id="liar-opponents"></div>
+
+        <div class="liar-table-center">
+            <div id="liar-stack-area" style="position:relative; width:60px; height:90px; border: 2px dashed rgba(255,255,255,0.2); border-radius:6px;">
+                </div>
+            <div id="last-move-info" style="position:absolute; bottom:-30px; font-size:0.8em; color:#bdc3c7; background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:10px;"></div>
+        </div>
+        
+        <div id="my-gun-status" class="my-gun-status hidden"></div>
+
+        <div class="my-hand-area" id="liar-my-hand"></div>
+        
+        <div class="liar-controls" id="liar-controls">
+            <button id="btn-liar-start" class="btn-game btn-green hidden" onclick="startLiarGame()">開始賭局</button>
+            <button id="btn-liar-play" class="btn-game btn-play hidden" onclick="playLiarCards()">出牌</button>
+            <button id="btn-liar-call" class="btn-game btn-liar-call hidden" onclick="callLiar()">LIAR!</button>
+        </div>
+
+        <div id="liar-reveal-overlay" class="reveal-overlay">
+            <h2 style="color:white; text-shadow:0 0 10px black;">檢驗中...</h2>
+            <div class="reveal-stage" id="reveal-cards-container"></div>
+            <div id="reveal-verdict" style="font-size:2em; font-weight:900; margin-top:20px; min-height:50px;"></div>
+        </div>
+
+        <div id="gun-anim-overlay" class="gun-overlay">
+            <div class="gun-visual">🔫</div>
+            <div class="bang-visual">BANG!</div>
+            <div id="gun-result-text" style="color:white; font-size:1.5em; font-weight:bold; margin-top:20px; background:rgba(0,0,0,0.7); padding:10px;"></div>
+        </div>
+    </div>
+
+    <button id="btn-undo" class="btn-undo" onclick="undoStep()">⬅ 悔棋</button>
 
     <div id="chat-area">
         <div style="margin-bottom: 5px; font-size: 0.9em; color: #555;">
             我是: <span id="myNameDisplay" class="editable-name" onclick="editName()">玩家</span> ✎
         </div>
-        
         <div id="chat-msgs"></div>
         <div class="chat-input-group">
             <input type="text" id="chatInput" placeholder="輸入訊息..." onkeypress="if(event.key==='Enter') sendMessage()">
@@ -189,8 +356,7 @@
     </div>
 
     <div style="margin-top: 20px;">
-        <button onclick="resetGame()">重新開始</button>
-        <button onclick="leaveRoom()">離開房間</button>
+        <button id="btn-restart-gen" onclick="resetGame()">重新開始</button>
     </div>
 </div>
 
@@ -202,7 +368,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getDatabase, ref, set, onValue, push, update, remove, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
+    import { getDatabase, ref, set, onValue, push, update, remove, onDisconnect, serverTimestamp, get, runTransaction } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyC7PZLTTNf17cfp9gCHudWiWX8SYPSCdDI",
@@ -216,7 +382,40 @@
     let currentRoomId = null, selectedGameType = 'ttt', roomDataCache = null;
     let currentUserKey = null;
     
-    let myName = "玩家" + Math.floor(Math.random() * 100);
+    let selectedLiarCards = []; 
+    let isAnimating = false;
+
+    // --- 玩家名稱初始化 (Sequence 1~99) ---
+    let myName = localStorage.getItem('playerName');
+
+    async function initializePlayerName() {
+        if (!myName) {
+            // 如果本地沒有名字，執行 Firebase 交易獲取 1-99 編號
+            const seqRef = ref(db, 'ongame_global/player_seq');
+            try {
+                const result = await runTransaction(seqRef, (currentSeq) => {
+                    // 若不存在或已達 99，重置為 1；否則 +1
+                    if (currentSeq === null || currentSeq >= 99) return 1;
+                    return currentSeq + 1;
+                });
+
+                if (result.committed) {
+                    const num = result.snapshot.val();
+                    myName = `匿名玩家${num}`;
+                    localStorage.setItem('playerName', myName);
+                } else {
+                    myName = "匿名玩家" + Math.floor(Math.random()*99+1); // Fallback
+                }
+            } catch (error) {
+                console.error("Name transaction failed", error);
+                myName = "匿名玩家" + Math.floor(Math.random()*99+1);
+            }
+        }
+        document.getElementById('myNameDisplay').innerText = myName;
+    }
+
+    // 立即初始化名稱
+    initializePlayerName();
 
     // --- 全站線上人數統計 ---
     const onlineRef = push(ref(db, 'online'));
@@ -232,54 +431,61 @@
 
     // --- 初始化：顯示所有房間 ---
     let totalInGameCount = 0;
+    onValue(ref(db, 'ongame_room'), (snapshot) => {
+        const container = document.getElementById('allRoomsContainer');
+        container.innerHTML = "";
+        const rooms = snapshot.val();
+        totalInGameCount = 0;
 
-    function initLobby() {
-        onValue(ref(db, 'ongame_room'), (snapshot) => {
-            const container = document.getElementById('allRoomsContainer');
-            container.innerHTML = "";
-            const rooms = snapshot.val();
-            
-            totalInGameCount = 0;
-
-            if (!rooms) { 
-                container.innerHTML = "<p>目前沒有房間，來開一個吧！</p>"; 
-                updateStatsUI();
-                return; 
-            }
-            
-            Object.entries(rooms).reverse().forEach(([id, r]) => {
-                const userCount = r.users ? Object.keys(r.users).length : 0;
-                totalInGameCount += userCount;
-
-                let typeName = '❌一般圈叉';
-                if (r.type === 'c4') typeName = '🔵重力四連';
-                if (r.type === 'ttt-infinite') typeName = '♾️無限圈叉';
-
-                const hasPass = r.password && r.password !== "";
-                const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
-                const passwordArg = hasPass ? r.password : ""; 
-                
-                const rows = r.rows || (r.type === 'c4' ? 6 : 3);
-                const cols = r.cols || (r.type === 'c4' ? 7 : 3);
-                const win = r.winCondition || (r.type === 'c4' ? 4 : 3);
-
-                const div = document.createElement('div');
-                div.className = 'room-item';
-                div.innerHTML = `
-                    <div class="room-info">
-                        <span class="room-name">${typeName} | ${r.name} ${lockIcon}</span>
-                        <div class="room-meta">大小: ${rows}x${cols} | 連線: ${win} | 人數: ${userCount}</div>
-                    </div>
-                    <div>
-                        <button class="btn-sm btn-green" onclick="attemptJoin('${id}', '${passwordArg}')">加入</button>
-                        <button class="btn-sm btn-red" onclick="deleteRoom('${id}')">刪除</button>
-                    </div>`;
-                container.appendChild(div);
-            });
+        if (!rooms) { 
+            container.innerHTML = "<p>目前沒有房間，來開一個吧！</p>"; 
             updateStatsUI();
+            return; 
+        }
+        
+        Object.entries(rooms).reverse().forEach(([id, r]) => {
+            const userCount = r.users ? Object.keys(r.users).length : 0;
+            totalInGameCount += userCount;
+
+            let typeName = '❌一般圈叉';
+            if (r.type === 'c4') typeName = '🔵重力四連';
+            if (r.type === 'ttt-infinite') typeName = '♾️無限圈叉';
+            if (r.type === 'liar') typeName = '🔫騙子桌遊';
+
+            const hasPass = r.password && r.password !== "";
+            const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
+            const passwordArg = hasPass ? r.password : ""; 
+            
+            // 狀態判斷
+            let statusBadge = '<span class="status-badge status-wait">等待中</span>';
+            if (r.status === 'playing' || (r.turn > 0 && r.type !== 'liar')) {
+                statusBadge = '<span class="status-badge status-play">遊戲中</span>';
+            }
+
+            let metaInfo = "";
+            if (r.type === 'liar') {
+                metaInfo = `人數: ${userCount}`;
+            } else {
+                const rows = r.rows || 3;
+                const cols = r.cols || 3;
+                metaInfo = `大小: ${rows}x${cols} | 人數: ${userCount}`;
+            }
+
+            const div = document.createElement('div');
+            div.className = 'room-item';
+            div.innerHTML = `
+                <div class="room-info">
+                    <span class="room-name">${typeName} | ${r.name} ${lockIcon} ${statusBadge}</span>
+                    <div class="room-meta">${metaInfo}</div>
+                </div>
+                <div>
+                    <button class="btn-sm btn-green" onclick="attemptJoin('${id}', '${passwordArg}')">加入</button>
+                    <button class="btn-sm btn-red" onclick="deleteRoom('${id}')">刪除</button>
+                </div>`;
+            container.appendChild(div);
         });
-    }
-    initLobby();
+        updateStatsUI();
+    });
 
     function updateStatsUI() {
         const lobbyCount = Math.max(0, totalOnlineCount - totalInGameCount);
@@ -290,128 +496,85 @@
     window.attemptJoin = (id, correctPass) => {
         if (correctPass && correctPass !== "undefined" && correctPass !== "") {
             const input = prompt("此房間有密碼，請輸入：");
-            if (input !== correctPass) {
-                alert("密碼錯誤！");
-                return;
-            }
+            if (input !== correctPass) { alert("密碼錯誤！"); return; }
         }
         enterRoom(id);
-    };
-
-    const p1Picker = document.getElementById('p1ColorPicker');
-    const p2Picker = document.getElementById('p2ColorPicker');
-    
-    function updateLocalColors() {
-        document.documentElement.style.setProperty('--p1-color', p1Picker.value);
-        document.documentElement.style.setProperty('--p2-color', p2Picker.value);
-    }
-    function saveColorsToDB() {
-        if(currentRoomId) {
-            update(ref(db, 'ongame_room/' + currentRoomId), {
-                p1Color: p1Picker.value,
-                p2Color: p2Picker.value
-            });
-        }
-    }
-    
-    p1Picker.addEventListener('input', updateLocalColors);
-    p2Picker.addEventListener('input', updateLocalColors);
-    p1Picker.addEventListener('change', saveColorsToDB);
-    p2Picker.addEventListener('change', saveColorsToDB);
-
-
-    window.deleteRoom = (id) => {
-        if(confirm("確定要永久刪除這個房間嗎？")) {
-            remove(ref(db, 'ongame_room/' + id)).then(() => alert("房間已刪除"));
-        }
     };
 
     // --- 房間管理 ---
     window.showCreateRoom = (type) => {
         selectedGameType = type;
-        
-        let title = "創立房間";
-        if(type === 'c4') title = '創立 四連棋 (重力落下)';
-        if(type === 'ttt') title = '創立 棋盤連線'; // 修改標題，因為現在包含兩種模式
-
-        document.getElementById('createTitle').innerText = title;
-        
-        // --- 修改處：根據選擇的遊戲類型顯示/隱藏無限模式按鈕與提示 ---
         const btnInfinite = document.getElementById('btn-infinite');
         const btnConfirm = document.getElementById('btn-confirm');
-        const infiniteHint = document.getElementById('infinite-hint');
-        const normalHint = document.getElementById('normal-hint');
+        const normalSettings = document.getElementById('normalSettings');
+        const liarSettings = document.getElementById('liarSettings');
+        
+        let title = "創立房間";
+        document.getElementById('createTitle').innerText = title;
 
-        if (type === 'c4') {
+        // 重置顯示
+        btnInfinite.classList.add('hidden');
+        normalSettings.classList.remove('hidden');
+        liarSettings.classList.add('hidden');
+        
+        if (type === 'liar') {
+            document.getElementById('createTitle').innerText = "創立 騙子桌遊 (Liar's Deck)";
+            normalSettings.classList.add('hidden');
+            liarSettings.classList.remove('hidden');
+            btnConfirm.innerText = "創立 賭局";
+            btnConfirm.onclick = createRoom;
+        } else if (type === 'c4') {
+            document.getElementById('createTitle').innerText = '創立 四連棋';
             document.getElementById('inputRows').value = 6;
             document.getElementById('inputCols').value = 7;
             document.getElementById('inputWin').value = 4;
-            
-            // 四連棋模式：隱藏無限按鈕，顯示標準提示
-            btnInfinite.classList.add('hidden');
             btnConfirm.innerText = "確認創立";
-            btnConfirm.onclick = createRoom; // 恢復標準創立
-
-            infiniteHint.style.display = 'none';
-            normalHint.style.display = 'block';
+            btnConfirm.onclick = createRoom;
         } else {
-            // 圈圈叉叉模式：預設 3x3
+            document.getElementById('createTitle').innerText = '創立 棋盤連線';
             document.getElementById('inputRows').value = 3;
             document.getElementById('inputCols').value = 3;
             document.getElementById('inputWin').value = 3;
-            
-            // 顯示無限按鈕，並修改標準按鈕文字
             btnInfinite.classList.remove('hidden');
             btnConfirm.innerText = "創立 一般圈圈叉叉";
-            // 確保點擊一般按鈕時是一般模式
             btnConfirm.onclick = () => { selectedGameType = 'ttt'; createRoom(); };
-
-            infiniteHint.style.display = 'none';
-            normalHint.style.display = 'block';
         }
-
         showSection('createRoomSection');
     };
 
-    // 修改處：新增一個專門創立無限模式的函數
-    window.createInfiniteRoom = () => {
-        selectedGameType = 'ttt-infinite';
-        createRoom();
-    };
+    window.createInfiniteRoom = () => { selectedGameType = 'ttt-infinite'; createRoom(); };
 
     window.createRoom = () => {
         const name = document.getElementById('roomName').value || "好玩房間";
         const pass = document.getElementById('roomPass').value;
-        
-        let rows = parseInt(document.getElementById('inputRows').value) || 3;
-        let cols = parseInt(document.getElementById('inputCols').value) || 3;
-        let win = parseInt(document.getElementById('inputWin').value) || 3;
-
-        if(rows < 3) rows = 3; if(cols < 3) cols = 3; if(win < 3) win = 3;
-        if(win > Math.max(rows, cols)) { alert("連線數不能大於棋盤長寬！"); return; }
-        
         const roomRef = push(ref(db, 'ongame_room'));
-        const initBoard = selectedGameType === 'c4' 
-            ? Array(rows * cols).fill(0) 
-            : Array(rows * cols).fill("");
         
-        // 預設顏色
-        const defaultP1 = "#ff4d4d";
-        const defaultP2 = "#ffd93d";
+        let roomData = { name, password: pass, type: selectedGameType, users: {}, status: 'waiting', chat: {} };
 
-        const roomData = {
-            type: selectedGameType, name, password: pass,
-            board: initBoard, turn: 0, 
-            rows: rows, cols: cols, winCondition: win,
-            p1Color: defaultP1, p2Color: defaultP2
-        };
-
-        // 如果是無限模式，需要初始化移動紀錄
-        if (selectedGameType === 'ttt-infinite') {
-            roomData.moves = []; // 存儲 { index: 0, player: "X" }
-            roomData.history = [{ board: initBoard, moves: [] }];
+        if (selectedGameType === 'liar') {
+            roomData = { 
+                ...roomData, 
+                gameState: 'waiting', 
+                deck: [], 
+                stack: [], 
+                hands: {}, 
+                guns: {} 
+            };
         } else {
-            roomData.history = [initBoard];
+            let rows = parseInt(document.getElementById('inputRows').value) || 3;
+            let cols = parseInt(document.getElementById('inputCols').value) || 3;
+            let win = parseInt(document.getElementById('inputWin').value) || 3;
+            if(rows < 3) rows = 3; if(cols < 3) cols = 3; if(win < 3) win = 3;
+            
+            const initBoard = selectedGameType === 'c4' ? Array(rows * cols).fill(0) : Array(rows * cols).fill("");
+            
+            roomData = {
+                ...roomData,
+                board: initBoard, turn: 0, 
+                rows: rows, cols: cols, winCondition: win,
+                history: selectedGameType === 'ttt-infinite' ? [{board:initBoard, moves:[]}] : [initBoard],
+                moves: selectedGameType === 'ttt-infinite' ? [] : null
+            };
         }
 
         set(roomRef, roomData).then(() => enterRoom(roomRef.key));
@@ -425,16 +588,31 @@
         const userRef = push(ref(db, `ongame_room/${id}/users`));
         currentUserKey = userRef.key;
         onDisconnect(userRef).remove();
+        
         set(userRef, { name: myName });
 
+        // 監聽房間資料
         onValue(ref(db, 'ongame_room/' + id), (snapshot) => {
             const data = snapshot.val();
-            if (!data) { alert("房間已被刪除"); leaveRoom(); return; }
+            if (!data) { alert("房間已被刪除或不存在"); leaveRoom(); return; }
             roomDataCache = data;
-            renderGame(data);
-            checkWinner(data);
+            
+            if (isAnimating && data.type === 'liar') {
+                if (data.gameState === 'playing' || data.gameState === 'waiting') {
+                   // 允許更新
+                } else {
+                   return; 
+                }
+            }
+            
+            if (data.type === 'liar') {
+                renderLiarGame(data);
+            } else {
+                renderBoardGame(data);
+            }
         });
 
+        // 監聽聊天
         onValue(ref(db, `ongame_room/${id}/chat`), (snapshot) => {
             const chatDiv = document.getElementById('chat-msgs');
             chatDiv.innerHTML = "";
@@ -449,120 +627,548 @@
             }
         });
     };
-
-    window.editName = () => {
-        const newName = prompt("請輸入您的新暱稱:", myName);
-        if (newName && newName.trim() !== "") {
-            myName = newName.trim();
-            document.getElementById('myNameDisplay').innerText = myName;
-            
-            if (currentRoomId && currentUserKey) {
-                update(ref(db, `ongame_room/${currentRoomId}/users/${currentUserKey}`), { name: myName });
-            }
-        }
-    };
-
-    // --- 遊戲邏輯 ---
-    function renderGame(data) {
+    
+    // --- 棋盤遊戲渲染 (圈圈叉叉/四連棋) ---
+    function renderBoardGame(data) {
+        document.getElementById('liar-wrapper').classList.add('hidden');
+        document.getElementById('btn-undo').classList.remove('hidden');
+        document.getElementById('btn-restart-gen').classList.remove('hidden');
+        document.getElementById('status').classList.remove('hidden');
+        
         document.getElementById('roomDisplayInfo').innerText = data.name;
-        
-        const rows = data.rows || (data.type === 'c4' ? 6 : 3);
-        const cols = data.cols || (data.type === 'c4' ? 7 : 3);
-        const win = data.winCondition || (data.type === 'c4' ? 4 : 3);
-        
+        const rows = data.rows || 3;
+        const cols = data.cols || 3;
         const userList = data.users ? Object.values(data.users) : [];
-        const userCount = userList.length;
-        let typeStr = "一般圈叉";
-        if (data.type === 'ttt-infinite') typeStr = "無限圈叉";
-        if (data.type === 'c4') typeStr = "重力四連";
-
-        document.getElementById('gameMetaInfo').innerText = `模式: ${typeStr} | 規格: ${rows}x${cols} | 連線: ${win} | 人數: ${userCount}人`;
-
-        const p1Name = userList[0] ? userList[0].name : "玩家 1";
-        const p2Name = userList[1] ? userList[1].name : "玩家 2";
+        const p1Name = userList[0] ? userList[0].name : "P1";
+        const p2Name = userList[1] ? userList[1].name : "P2";
         const currentPlayerName = (data.turn % 2 === 0) ? p1Name : p2Name;
-
-        // 同步顏色
-        if(data.type === 'c4') {
-            if(data.p1Color && data.p1Color !== p1Picker.value) {
-                p1Picker.value = data.p1Color;
-                document.documentElement.style.setProperty('--p1-color', data.p1Color);
-            }
-            if(data.p2Color && data.p2Color !== p2Picker.value) {
-                p2Picker.value = data.p2Color;
-                document.documentElement.style.setProperty('--p2-color', data.p2Color);
-            }
-        }
+        
+        document.getElementById('gameMetaInfo').innerText = `${data.type === 'c4'?'四連棋':'圈叉'} | ${rows}x${cols}`;
 
         if (data.type === 'c4') {
-            // ... 四連棋渲染邏輯保持不變 ...
             document.getElementById('ttt-board').classList.add('hidden');
             document.getElementById('c4-game-wrapper').classList.remove('hidden');
-            const boardDiv = document.getElementById('c4-board');
-            
-            boardDiv.style.gridTemplateColumns = `repeat(${cols}, var(--c4-cell-size))`;
-            
-            const size = cols > 10 ? '30px' : (cols > 7 ? '35px' : '45px');
-            document.documentElement.style.setProperty('--c4-cell-size', size);
-
-            boardDiv.innerHTML = "";
-            data.board.forEach((val, i) => {
-                const cell = document.createElement('div');
-                cell.className = 'c4-cell';
-                if(val > 0) cell.innerHTML = `<div class="piece p${val}"></div>`;
-                cell.onclick = () => dropC4(i % cols, rows, cols);
-                boardDiv.appendChild(cell);
-            });
-            const turnSymbol = (data.turn % 2 === 0) ? '(P1)' : '(P2)';
-            document.getElementById('status').innerText = `輪到: ${currentPlayerName} ${turnSymbol}`;
-            document.getElementById('status').style.color = (data.turn % 2 === 0) ? (data.p1Color || '#ff4d4d') : (data.p2Color || '#ffd93d');
-
+            renderC4Board(data, rows, cols);
+             document.getElementById('status').innerText = `輪到: ${currentPlayerName} ${data.turn%2===0?'(P1)':'(P2)'}`;
+             document.getElementById('status').style.color = (data.turn%2===0) ? (data.p1Color||'#ff4d4d') : (data.p2Color||'#ffd93d');
         } else {
-            // ... 圈圈叉叉 (一般 & 無限) ...
             document.getElementById('c4-game-wrapper').classList.add('hidden');
             document.getElementById('ttt-board').classList.remove('hidden');
-            const boardDiv = document.getElementById('ttt-board');
-            
-            boardDiv.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            
-            boardDiv.innerHTML = "";
+            renderTTTBoard(data, rows, cols);
+            document.getElementById('status').innerText = `輪到: ${currentPlayerName} (${data.turn%2===0?'X':'O'})`;
+            document.getElementById('status').style.color = '#d9534f';
+        }
+        checkBoardWinner(data);
+    }
 
-            // 計算哪些棋子即將消失 (僅限無限模式)
-            let indexToFade = -1;
-            if (data.type === 'ttt-infinite' && data.moves) {
-                // 找出當前所有棋子
-                const moves = data.moves;
-                const p1Moves = moves.filter(m => m.player === 'X');
-                const p2Moves = moves.filter(m => m.player === 'O');
-                
-                // 如果現在是某人的回合，且他已經有3子，那他"最舊"的那子就是下一手會消失的
-                // 或者是顯示"場上最舊的子"？通常是顯示"如果我下，哪顆會消"
-                // 當前輪到的人：
-                const currentSymbol = (data.turn % 2 === 0) ? 'X' : 'O';
-                const myMoves = (currentSymbol === 'X') ? p1Moves : p2Moves;
+    // --- 移植版 騙子桌遊 邏輯與渲染 ---
 
-                if (myMoves.length >= 3) {
-                    // 最舊的那個
-                    indexToFade = myMoves[0].index;
+    function renderLiarGame(data) {
+        // 切換顯示，隱藏棋盤相關按鈕
+        document.getElementById('ttt-board').classList.add('hidden');
+        document.getElementById('c4-game-wrapper').classList.add('hidden');
+        document.getElementById('btn-undo').classList.add('hidden');
+        document.getElementById('btn-restart-gen').classList.add('hidden');
+        document.getElementById('status').classList.add('hidden');
+        document.getElementById('liar-wrapper').classList.remove('hidden');
+        
+        document.getElementById('roomDisplayInfo').innerText = data.name;
+        document.getElementById('gameMetaInfo').innerText = "Liar's Deck";
+
+        const users = data.users || {};
+        const playerKeys = data.playerOrder || Object.keys(users);
+        const myIdx = playerKeys.indexOf(currentUserKey);
+        
+        // 1. 處理狀態顯示
+        const statusEl = document.getElementById('liar-status-text');
+        const targetEl = document.getElementById('liar-target-display');
+        const stackArea = document.getElementById('liar-stack-area');
+        const myGunDiv = document.getElementById('my-gun-status');
+        
+        if (data.gameState === 'waiting') {
+            statusEl.innerText = `準備中 (${playerKeys.length}人)`;
+            targetEl.classList.add('hidden');
+            stackArea.innerHTML = "";
+            myGunDiv.classList.add('hidden'); 
+            document.getElementById('liar-reveal-overlay').style.display = 'none';
+            document.getElementById('gun-anim-overlay').style.display = 'none';
+            isAnimating = false;
+            
+            if (playerKeys[0] === currentUserKey && playerKeys.length >= 2) {
+                document.getElementById('btn-liar-start').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-liar-start').classList.add('hidden');
+            }
+        } 
+        else if (data.gameState === 'playing') {
+            document.getElementById('btn-liar-start').classList.add('hidden');
+            document.getElementById('liar-reveal-overlay').style.display = 'none';
+            document.getElementById('gun-anim-overlay').style.display = 'none';
+            targetEl.classList.remove('hidden');
+            targetEl.innerText = `目標: ${data.targetRank}`;
+            myGunDiv.classList.remove('hidden');
+            
+            const curPlayerKey = playerKeys[data.turnIndex];
+            const curPlayer = users[curPlayerKey];
+            const isMyTurn = (curPlayerKey === currentUserKey);
+            
+            // --- 特別規則檢查：2人對決且對手無牌 ---
+            // 規則更新：如果只剩2人存活，且上家出完牌 (這時 currentHand 是空的)
+            // 下家必須強制抓謊。
+            const aliveKeys = playerKeys.filter(k => !data.guns[k]?.isDead);
+            const lastMove = data.stack && data.stack.length > 0 ? data.stack[data.stack.length - 1] : null;
+            let forceCall = false;
+
+            if (aliveKeys.length === 2 && lastMove) {
+                // 如果上一位出牌者現在手牌是空的 (代表他出完了)
+                const prevOwnerHand = data.hands[lastMove.owner];
+                if (prevOwnerHand && prevOwnerHand.length === 0) {
+                    forceCall = true;
                 }
             }
+            
+            if (forceCall) {
+                statusEl.innerHTML = isMyTurn ? 
+                    `<b style="color:#e74c3c">⚠️ 對方已出完牌！強制抓謊！</b>` : 
+                    `對手出完牌，正在被強制檢驗...`;
+            } else {
+                statusEl.innerHTML = isMyTurn ? 
+                    `<b style="color:#f1c40f">🔴 輪到你了！請出牌</b>` : 
+                    `等待 ${curPlayer?.name || '對手'} 出牌...`;
+            }
 
-            data.board.forEach((val, i) => {
-                const cell = document.createElement('div');
-                cell.className = 'ttt-cell';
-                if (i === indexToFade) {
-                    cell.classList.add('about-to-die');
+            // 按鈕邏輯
+            const btnCall = document.getElementById('btn-liar-call');
+            const btnPlay = document.getElementById('btn-liar-play');
+            
+            if (isMyTurn) {
+                if (forceCall) {
+                    // 強制抓謊模式
+                    btnPlay.classList.add('hidden');
+                    btnCall.classList.remove('hidden');
+                    btnCall.innerText = "⚠️ 對方無牌！強制抓謊 ⚠️";
+                    btnCall.style.background = "linear-gradient(to bottom, #c0392b, #96281b)";
+                } else {
+                    // 正常模式
+                    btnPlay.classList.remove('hidden');
+                    btnCall.classList.toggle('hidden', !(data.stack && data.stack.length > 0));
+                    btnCall.innerText = "LIAR!";
+                    btnCall.style.background = ""; // 重置樣式
                 }
-                cell.innerText = val;
-                cell.onclick = () => clickTTT(i);
-                boardDiv.appendChild(cell);
-            });
-            document.getElementById('status').innerText = `輪到: ${currentPlayerName} (${data.turn % 2 === 0 ? 'X' : 'O'})`;
-            document.getElementById('status').style.color = '#d9534f';
+            } else {
+                btnPlay.classList.add('hidden');
+                btnCall.classList.add('hidden');
+            }
+
+            // 渲染堆疊
+            stackArea.innerHTML = "";
+            if (data.stack) {
+                data.stack.forEach((move, i) => {
+                    if (i < data.stack.length - 10) return; // 只渲染最後幾張
+                    const c = document.createElement('div');
+                    c.className = 'card card-back';
+                    c.style.position = 'absolute';
+                    c.style.width = '40px'; c.style.height = '60px';
+                    c.style.transform = `rotate(${Math.sin(i*99)*20}deg) translate(${Math.cos(i)*5}px, ${Math.sin(i)*5}px)`;
+                    stackArea.appendChild(c);
+                });
+                if (data.lastMove) {
+                    document.getElementById('last-move-info').innerText = `${data.lastMove.name} 出了 ${data.lastMove.count} 張`;
+                }
+            }
+        }
+        else if (data.gameState === 'challenge' && !isAnimating) {
+             triggerChallengeAnimation(data);
+        }
+
+        // 2. 渲染對手
+        const oppRow = document.getElementById('liar-opponents');
+        oppRow.innerHTML = "";
+        playerKeys.forEach(k => {
+            if (k === currentUserKey) return;
+            const u = users[k];
+            if (!u) return;
+            const handSize = data.hands && data.hands[k] ? data.hands[k].length : 0;
+            const gun = data.guns ? data.guns[k] : {chamber:0, isDead:false};
+            
+            let statusClass = "";
+            if (k === playerKeys[data.turnIndex]) statusClass = "active";
+            if (gun.isDead) statusClass = "dead";
+            if (!gun.isDead && handSize === 0 && data.gameState === 'playing') statusClass = "escaped"; // 上岸
+
+            const div = document.createElement('div');
+            div.className = `opponent ${statusClass}`;
+            
+            // 槍枝圖示
+            let bulletsHTML = "";
+            for(let i=0; i<6; i++) {
+                let bClass = (i < gun.chamber) ? "fired" : "live";
+                bulletsHTML += `<div class="bullet-slot ${bClass}"></div>`;
+            }
+
+            div.innerHTML = `
+                <div style="font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${u.name}</div>
+                <div style="font-size:1.5em; margin:5px 0;">🃏 ${handSize}</div>
+                <div class="cylinder-display">${bulletsHTML}</div>
+                ${gun.isDead ? '<span style="position:absolute; top:30%; left:25%; font-size:2em;">💀</span>' : ''}
+                ${statusClass==='escaped' ? '<span style="position:absolute; top:30%; left:20%; font-size:1.5em; color:#2ecc71; font-weight:bold;">SAFE</span>' : ''}
+            `;
+            oppRow.appendChild(div);
+        });
+        
+        // 2.5 渲染自己的槍枝狀態
+        const myGunInfo = data.guns ? data.guns[currentUserKey] : {chamber:0, isDead:false};
+        if (myGunDiv && data.gameState !== 'waiting') {
+            let bulletsHTML = "";
+            for(let i=0; i<6; i++) {
+                let bClass = (i < myGunInfo.chamber) ? "fired" : "live";
+                bulletsHTML += `<div class="bullet-slot ${bClass}"></div>`;
+            }
+            myGunDiv.innerHTML = `
+                <div style="font-size:0.8em; margin-bottom:5px;">我的左輪</div>
+                <div class="cylinder-display">${bulletsHTML}</div>
+                <div style="font-size:0.7em; margin-top:3px; color:#bdc3c7;">
+                    ${myGunInfo.isDead ? '已死亡' : `剩餘機率: 1/${6 - myGunInfo.chamber}`}
+                </div>
+            `;
+            if (myGunInfo.isDead) myGunDiv.style.borderColor = "red";
+            else myGunDiv.style.borderColor = "#7f8c8d";
+        }
+
+
+        // 3. 渲染自己手牌
+        const myHandDiv = document.getElementById('liar-my-hand');
+        const myCards = (data.hands && data.hands[currentUserKey]) || [];
+        myHandDiv.innerHTML = "";
+        
+        if (selectedLiarCards.some(idx => idx >= myCards.length)) selectedLiarCards = [];
+
+        myCards.forEach((c, i) => {
+            const div = document.createElement('div');
+            div.className = `card ${['♥','♦'].includes(c.suit)?'red':'black'} ${c.rank==='Joker'?'joker':''}`;
+            if (selectedLiarCards.includes(i)) div.classList.add('selected');
+            
+            if (c.rank === 'Joker') div.innerHTML = '🤡<br>Joker';
+            else div.innerHTML = `${c.suit}<br>${c.rank}`;
+            
+            div.onclick = () => {
+                if (data.gameState !== 'playing') return;
+                // 強制抓謊時不能選牌
+                if (statusEl.innerHTML.includes("強制抓謊")) return; 
+                
+                const idx = selectedLiarCards.indexOf(i);
+                if (idx >= 0) {
+                    selectedLiarCards.splice(idx, 1);
+                    div.classList.remove('selected');
+                } else {
+                    if (selectedLiarCards.length >= 3) return alert("最多出3張");
+                    selectedLiarCards.push(i);
+                    div.classList.add('selected');
+                }
+            };
+            myHandDiv.appendChild(div);
+        });
+        
+        // 自己的槍與死亡狀態
+        const myGun = data.guns && data.guns[currentUserKey];
+        if (myGun && myGun.isDead) {
+             statusEl.innerHTML = "<b style='color:red'>💀 你已死亡</b>";
+             document.getElementById('liar-controls').classList.add('hidden');
         }
     }
 
-    function dropC4(col, rows, cols) {
+    // --- 動畫邏輯 (移植自 test) ---
+    async function triggerChallengeAnimation(data) {
+        if (isAnimating) return;
+        isAnimating = true;
+
+        const res = data.challengeResult;
+        const overlay = document.getElementById('liar-reveal-overlay');
+        const container = document.getElementById('reveal-cards-container');
+        const verdict = document.getElementById('reveal-verdict');
+        
+        overlay.style.display = 'flex';
+        container.innerHTML = "";
+        verdict.innerHTML = "";
+        
+        // 1. 產生牌背
+        res.cards.forEach((c, i) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'reveal-card-wrapper';
+            wrapper.innerHTML = `
+                <div class="reveal-back"></div>
+                <div class="reveal-face ${['♥','♦'].includes(c.suit)?'red':'black'}">
+                    ${c.rank==='Joker'?'🤡': c.suit + c.rank}
+                </div>
+            `;
+            container.appendChild(wrapper);
+        });
+
+        // 2. 依序翻牌
+        await new Promise(r => setTimeout(r, 500));
+        const cards = container.children;
+        
+        for (let i = 0; i < cards.length; i++) {
+            cards[i].classList.add('flipped');
+            const cData = res.cards[i];
+            const isMatch = (cData.rank === data.targetRank || cData.rank === 'Joker');
+            
+            await new Promise(r => setTimeout(r, 600));
+            const face = cards[i].querySelector('.reveal-face');
+            if (isMatch) {
+                face.classList.add('correct');
+            } else {
+                face.classList.add('wrong');
+            }
+            await new Promise(r => setTimeout(r, 400));
+        }
+
+        // 3. 顯示結果文字
+        verdict.innerHTML = res.isLiar 
+            ? `<span style="color:#e74c3c">抓到了！說謊！</span><br><span style="font-size:0.5em">輸家: ${res.loserName}</span>` 
+            : `<span style="color:#2ecc71">誠實！抓錯了！</span><br><span style="font-size:0.5em">輸家: ${res.loserName}</span>`;
+        
+        await new Promise(r => setTimeout(r, 1500));
+
+        // 4. 進入開槍環節
+        overlay.style.display = 'none';
+        await triggerGunAnimation(res.loser, res.loserName);
+    }
+
+    async function triggerGunAnimation(loserId, loserName) {
+        const overlay = document.getElementById('gun-anim-overlay');
+        const txt = document.getElementById('gun-result-text');
+        const bang = overlay.querySelector('.bang-visual');
+        
+        overlay.style.display = 'flex';
+        txt.innerText = `${loserName} 接受制裁...`;
+        bang.style.opacity = 0;
+        bang.classList.remove('bang-animate');
+
+        // 瞄準動畫
+        await new Promise(r => setTimeout(r, 1500)); 
+        
+        // 模擬開槍
+        overlay.classList.add('shaking');
+        bang.classList.add('bang-animate');
+        
+        // 檢查此人是否真的死了
+        const roomSnapshot = await get(ref(db, `ongame_room/${currentRoomId}`));
+        const rData = roomSnapshot.val();
+        const playerGun = rData.guns[loserId];
+        
+        // 延遲顯示結果
+        await new Promise(r => setTimeout(r, 500));
+        overlay.classList.remove('shaking');
+        
+        if (playerGun.isDead) {
+            txt.innerHTML = `<span style="color:red; font-size:1.5em;">💀 死亡 💀</span>`;
+        } else {
+            txt.innerHTML = `<span style="color:#2ecc71">恭喜倖存😎(空包彈)</span><br>剩餘: ${6 - playerGun.chamber}發`;
+        }
+
+        await new Promise(r => setTimeout(r, 2000));
+        overlay.style.display = 'none';
+        
+        // 由房主或觸發者推進遊戲
+        const players = rData.playerOrder;
+        if (players[0] === currentUserKey) {
+            nextLiarRound(rData);
+        }
+        
+        isAnimating = false; 
+    }
+
+    // --- 騙子桌遊 操作函式 ---
+    window.startLiarGame = () => {
+        const ranks = ['A', 'Q', 'K'];
+        const suits = ['♠', '♥', '♦', '♣', '♠', '♥'];
+        let deck = [];
+        ranks.forEach(r => suits.forEach(s => deck.push({suit:s, rank:r})));
+        deck.push({suit:'', rank:'Joker'}, {suit:'', rank:'Joker'});
+        deck.sort(() => Math.random() - 0.5);
+
+        const players = Object.keys(roomDataCache.users);
+        const hands = {};
+        players.forEach(p => hands[p] = deck.splice(0, 5));
+        
+        // 重置槍枝
+        const guns = {};
+        players.forEach(p => guns[p] = { chamber: 0, bulletPos: Math.floor(Math.random()*6), isDead: false });
+
+        update(ref(db, `ongame_room/${currentRoomId}`), {
+            gameState: 'playing', deck, hands, guns, stack: [],
+            playerOrder: players, turnIndex: 0, targetRank: ranks[Math.floor(Math.random()*3)],
+            challengeResult: null, status: 'playing'
+        });
+    };
+
+    window.playLiarCards = () => {
+        if (!selectedLiarCards.length) return alert("請選牌");
+        
+        const myHand = roomDataCache.hands[currentUserKey];
+        const played = selectedLiarCards.map(i => myHand[i]);
+        const newHand = myHand.filter((_, i) => !selectedLiarCards.includes(i));
+        
+        const stack = roomDataCache.stack || [];
+        stack.push({ cards: played, owner: currentUserKey, name: myName, count: played.length });
+        
+        const players = roomDataCache.playerOrder;
+        
+        // --- 更新演算法：處理安全跳過機制 (Skip Safe) ---
+        let nextIdx = roomDataCache.turnIndex;
+        let found = false;
+        let loopCount = 0;
+        
+        // 計算存活人數
+        const aliveCount = players.filter(p => !roomDataCache.guns[p].isDead).length;
+
+        while (loopCount < players.length) {
+            nextIdx = (nextIdx + 1) % players.length;
+            const pId = players[nextIdx];
+            const gun = roomDataCache.guns[pId];
+            const pHand = roomDataCache.hands[pId] || []; // 玩家手牌
+            
+            // 1. 死人跳過
+            if (gun.isDead) {
+                loopCount++;
+                continue;
+            }
+
+            // 2. 安全上岸邏輯
+            // 規則：如果存活人數大於 2，且該玩家沒牌了，視為安全 (SAFE)，跳過他。
+            // 規則：如果存活人數等於 2，且該玩家沒牌了，不跳過 (因為需要強制對方抓謊)。
+            if (aliveCount > 2 && pHand.length === 0) {
+                 loopCount++;
+                 continue; 
+            }
+            
+            // 找到了活著且符合規則的玩家
+            found = true;
+            break;
+        }
+
+        if (!found) {
+            alert("遊戲異常：找不到下一位存活玩家");
+            return;
+        }
+
+        update(ref(db, `ongame_room/${currentRoomId}`), {
+            [`hands/${currentUserKey}`]: newHand,
+            stack: stack,
+            turnIndex: nextIdx,
+            lastMove: { name: myName, count: played.length }
+        });
+        selectedLiarCards = [];
+    };
+
+    window.callLiar = async () => {
+        const roomSnapshot = await get(ref(db, `ongame_room/${currentRoomId}`));
+        const rData = roomSnapshot.val();
+
+        if (!rData || !rData.stack || rData.stack.length === 0) return;
+
+        const stack = rData.stack;
+        const lastEntry = stack[stack.length - 1];
+        const target = rData.targetRank;
+        
+        // 規則：只要有任何一張不是目標且不是Joker，就是說謊
+        let isLiar = lastEntry.cards.some(c => c.rank !== target && c.rank !== 'Joker');
+        
+        // 抓對了 -> 出牌者(owner)輸
+        // 抓錯了 -> 抓人者(currentUserKey)輸
+        const loserId = isLiar ? lastEntry.owner : currentUserKey;
+        const loserName = rData.users[loserId].name;
+
+        // 處理開槍邏輯
+        const gun = rData.guns[loserId];
+        const died = (gun.chamber === gun.bulletPos);
+        const updates = {};
+        
+        updates[`guns/${loserId}/chamber`] = gun.chamber + 1;
+        if(died) updates[`guns/${loserId}/isDead`] = true;
+        
+        updates['challengeResult'] = {
+            cards: lastEntry.cards, isLiar, loser: loserId, loserName
+        };
+        updates['gameState'] = 'challenge';
+        
+        update(ref(db, `ongame_room/${currentRoomId}`), updates);
+    };
+
+    function nextLiarRound(rData) {
+        const players = rData.playerOrder;
+        const alive = players.filter(p => !rData.guns[p].isDead);
+        
+        // 剩下一人獲勝
+        if (alive.length <= 1) {
+            const winnerName = alive.length > 0 ? rData.users[alive[0]].name : "無人";
+            document.getElementById('win-message').innerHTML = `🏆 最後生還者<br>${winnerName}`;
+            document.getElementById('win-overlay').style.display = 'flex';
+            return;
+        }
+
+        // 發牌只發給活人
+        const ranks = ['A', 'Q', 'K'];
+        const suits = ['♠', '♥', '♦', '♣', '♠', '♥'];
+        let deck = [];
+        ranks.forEach(r => suits.forEach(s => deck.push({suit:s, rank:r})));
+        deck.push({suit:'', rank:'Joker'}, {suit:'', rank:'Joker'});
+        deck.sort(() => Math.random() - 0.5);
+        
+        const hands = {};
+        alive.forEach(p => hands[p] = deck.splice(0, 5));
+
+        // 隨機選一個活人開始
+        const starter = alive[Math.floor(Math.random()*alive.length)];
+        const startIdx = players.indexOf(starter);
+
+        update(ref(db, `ongame_room/${currentRoomId}`), {
+            gameState: 'playing', hands, deck, stack: [],
+            targetRank: ranks[Math.floor(Math.random()*3)],
+            turnIndex: startIdx, challengeResult: null
+        });
+    }
+    
+    // --- 輔助函式 ---
+    function renderC4Board(data, rows, cols) {
+        const boardDiv = document.getElementById('c4-board');
+        boardDiv.style.gridTemplateColumns = `repeat(${cols}, var(--c4-cell-size))`;
+        const size = cols > 10 ? '30px' : (cols > 7 ? '35px' : '45px');
+        document.documentElement.style.setProperty('--c4-cell-size', size);
+        boardDiv.innerHTML = "";
+        data.board.forEach((val, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'c4-cell';
+            if(val > 0) cell.innerHTML = `<div class="piece p${val}"></div>`;
+            cell.onclick = () => dropC4(i % cols, rows, cols);
+            boardDiv.appendChild(cell);
+        });
+    }
+
+    function renderTTTBoard(data, rows, cols) {
+        const boardDiv = document.getElementById('ttt-board');
+        boardDiv.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        boardDiv.innerHTML = "";
+        let indexToFade = -1;
+        if (data.type === 'ttt-infinite' && data.moves) {
+            const moves = data.moves;
+            const currentSymbol = (data.turn % 2 === 0) ? 'X' : 'O';
+            const myMoves = moves.filter(m => m.player === currentSymbol);
+            if (myMoves.length >= 3) indexToFade = myMoves[0].index;
+        }
+        data.board.forEach((val, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'ttt-cell';
+            if (i === indexToFade) cell.classList.add('about-to-die');
+            cell.innerText = val;
+            cell.onclick = () => clickTTT(i);
+            boardDiv.appendChild(cell);
+        });
+    }
+
+    window.dropC4 = (col, rows, cols) => {
+        if(roomDataCache.type !== 'c4') return;
         const board = [...roomDataCache.board];
         for (let r = rows - 1; r >= 0; r--) {
             const index = r * cols + col;
@@ -573,41 +1179,27 @@
             }
         }
     }
-
-    function clickTTT(i) {
-        if (roomDataCache.board[i] !== "") return; // 格子有東西不能下
-        
+    
+    window.clickTTT = (i) => {
+        if(roomDataCache.type === 'c4' || roomDataCache.type === 'liar') return;
+        if (roomDataCache.board[i] !== "") return;
         const isInfinite = (roomDataCache.type === 'ttt-infinite');
         const board = [...roomDataCache.board];
         const currentPlayer = roomDataCache.turn % 2 === 0 ? "X" : "O";
+        let newMoves = isInfinite ? (roomDataCache.moves ? [...roomDataCache.moves] : []) : null;
         
-        let newMoves = [];
-        if (isInfinite) {
-            newMoves = roomDataCache.moves ? [...roomDataCache.moves] : [];
-        }
-
-        // 下子
         board[i] = currentPlayer;
-        
-        // 如果是無限模式，處理移除邏輯
         if (isInfinite) {
             newMoves.push({ index: i, player: currentPlayer });
-            
-            // 檢查該玩家是否超過 3 子
             const myMoves = newMoves.filter(m => m.player === currentPlayer);
             if (myMoves.length > 3) {
-                const moveToRemove = myMoves[0]; // 最舊的
-                // 從棋盤移除
+                const moveToRemove = myMoves[0];
                 board[moveToRemove.index] = "";
-                // 從紀錄移除 (要找他在主陣列的位置)
                 const realIndex = newMoves.indexOf(moveToRemove);
-                if (realIndex > -1) {
-                    newMoves.splice(realIndex, 1);
-                }
+                if (realIndex > -1) newMoves.splice(realIndex, 1);
             }
             updateMove(board, newMoves);
         } else {
-            // 一般模式
             updateMove(board);
         }
     }
@@ -615,140 +1207,84 @@
     function updateMove(newBoard, newMoves = null) {
         const history = roomDataCache.history || [];
         const isInfinite = (roomDataCache.type === 'ttt-infinite');
-
         if (isInfinite) {
-            // 無限模式 History 存物件 { board, moves }
             history.push({ board: newBoard, moves: newMoves });
-            update(ref(db, `ongame_room/${currentRoomId}`), {
-                board: newBoard,
-                moves: newMoves,
-                turn: roomDataCache.turn + 1,
-                history: history
-            });
+            update(ref(db, `ongame_room/${currentRoomId}`), { board: newBoard, moves: newMoves, turn: roomDataCache.turn + 1, history: history });
         } else {
-            // 一般模式 History 存 board 陣列
             history.push(newBoard);
-            update(ref(db, `ongame_room/${currentRoomId}`), {
-                board: newBoard,
-                turn: roomDataCache.turn + 1,
-                history: history
-            });
+            update(ref(db, `ongame_room/${currentRoomId}`), { board: newBoard, turn: roomDataCache.turn + 1, history: history });
         }
     }
 
     window.undoStep = () => {
         const history = roomDataCache.history || [];
         if (history.length <= 1) return alert("不能再退了！");
-        
-        history.pop(); // 移除現在狀態
-        const lastState = history[history.length - 1]; // 取得上一個狀態
-        
+        history.pop();
+        const lastState = history[history.length - 1];
         const isInfinite = (roomDataCache.type === 'ttt-infinite');
-        
         if (isInfinite) {
-            // lastState 應該是 { board, moves }
-            // 兼容性檢查：如果舊資料沒有 moves，可能會報錯，稍微防呆一下
-            const prevBoard = lastState.board || lastState; 
-            const prevMoves = lastState.moves || [];
-
-            update(ref(db, `ongame_room/${currentRoomId}`), {
-                board: prevBoard,
-                moves: prevMoves,
-                turn: roomDataCache.turn - 1,
-                history: history
-            });
+            update(ref(db, `ongame_room/${currentRoomId}`), { board: lastState.board||lastState, moves: lastState.moves||[], turn: roomDataCache.turn - 1, history: history });
         } else {
-            // 一般模式 lastState 是 board Array
-            update(ref(db, `ongame_room/${currentRoomId}`), {
-                board: lastState,
-                turn: roomDataCache.turn - 1,
-                history: history
-            });
+            update(ref(db, `ongame_room/${currentRoomId}`), { board: lastState, turn: roomDataCache.turn - 1, history: history });
         }
     };
 
     window.sendMessage = () => {
         const input = document.getElementById('chatInput');
         if (!input.value.trim()) return;
-        push(ref(db, `ongame_room/${currentRoomId}/chat`), {
-            user: myName,
-            text: input.value,
-            time: serverTimestamp()
-        });
+        push(ref(db, `ongame_room/${currentRoomId}/chat`), { user: myName, text: input.value, time: serverTimestamp() });
         input.value = "";
     };
 
-    function checkWinner(data) {
-        const rows = data.rows || (data.type === 'c4' ? 6 : 3);
-        const cols = data.cols || (data.type === 'c4' ? 7 : 3);
-        const winTarget = data.winCondition || (data.type === 'c4' ? 4 : 3);
-        const emptyVal = data.type === 'c4' ? 0 : "";
+    window.editName = () => {
+        const newName = prompt("請輸入您的新暱稱:", myName);
+        if (newName && newName.trim() !== "") {
+            myName = newName.trim();
+            localStorage.setItem('playerName', myName);
+            document.getElementById('myNameDisplay').innerText = myName;
+            if (currentRoomId && currentUserKey) update(ref(db, `ongame_room/${currentRoomId}/users/${currentUserKey}`), { name: myName });
+        }
+    };
 
+    function checkBoardWinner(data) {
+        if(data.type === 'liar') return;
+
+        const rows = data.rows || 3;
+        const cols = data.cols || 3;
+        const winTarget = data.winCondition || 3;
+        const emptyVal = data.type === 'c4' ? 0 : "";
         const winner = checkWinGeneral(data.board, rows, cols, winTarget, emptyVal);
         const msgEl = document.getElementById('win-message');
 
         if (winner) {
-            const userList = data.users ? Object.values(data.users) : [];
-            let winnerName = "";
-            let winSymbol = "";
-            let winColor = "#ffffff";
-
-            if (winner === 'X' || winner === 1) {
-                winnerName = userList[0] ? userList[0].name : "玩家 1";
-                winSymbol = (data.type === 'c4') ? '(P1)' : '(X)';
-                if(data.type === 'c4') winColor = data.p1Color || document.getElementById('p1ColorPicker').value;
-            } else if (winner === 'O' || winner === 2) {
-                winnerName = userList[1] ? userList[1].name : "玩家 2";
-                winSymbol = (data.type === 'c4') ? '(P2)' : '(O)';
-                if(data.type === 'c4') winColor = data.p2Color || document.getElementById('p2ColorPicker').value;
-            }
-
-            msgEl.innerText = `🎉 恭喜 ${winnerName} ${winSymbol} 獲勝！ 🎉`;
-            msgEl.style.color = winColor;
-            
+            const userList = Object.values(data.users);
+            let winnerName = (winner === 'X' || winner === 1) ? (userList[0]?.name||"P1") : (userList[1]?.name||"P2");
+            msgEl.innerText = `🎉 恭喜 ${winnerName} 獲勝！ 🎉`;
+            msgEl.style.color = (winner === 'X' || winner === 1) ? '#ff4d4d' : '#ffd93d';
             document.getElementById('win-overlay').style.display = 'flex';
-        } else {
-            // 平手判定：如果是無限模式，理論上很難平手(除非格子很少)，且永遠不會滿盤
-            // 所以無限模式只檢查"是否有人贏"。
-            // 只有一般模式才檢查平手
-            if (data.type !== 'ttt-infinite') {
-                const isFull = data.board.every(cell => cell !== 0 && cell !== "");
-                if (isFull) {
-                     msgEl.innerText = `🤝 平手！ 🤝`;
-                     msgEl.style.color = "white";
-                     document.getElementById('win-overlay').style.display = 'flex';
-                } else {
-                    document.getElementById('win-overlay').style.display = 'none';
-                }
+        } else if (data.type !== 'ttt-infinite') {
+            const isFull = data.board.every(c => c !== 0 && c !== "");
+            if (isFull) {
+                msgEl.innerText = `🤝 平手！ 🤝`;
+                msgEl.style.color = "white";
+                document.getElementById('win-overlay').style.display = 'flex';
             } else {
-                 document.getElementById('win-overlay').style.display = 'none';
+                document.getElementById('win-overlay').style.display = 'none';
             }
         }
     }
 
     function checkWinGeneral(board, rows, cols, target, emptyVal) {
-        const getCell = (r, c) => {
-            if(r < 0 || r >= rows || c < 0 || c >= cols) return null;
-            return board[r * cols + c];
-        };
-
-        const directions = [
-            [0, 1], [1, 0], [1, 1], [1, -1] 
-        ];
-
+        const getCell = (r, c) => (r < 0 || r >= rows || c < 0 || c >= cols) ? null : board[r * cols + c];
+        const directions = [[0, 1], [1, 0], [1, 1], [1, -1]];
         for(let r = 0; r < rows; r++) {
             for(let c = 0; c < cols; c++) {
                 const current = getCell(r, c);
                 if (current === emptyVal || current === null) continue;
-
                 for (let [dr, dc] of directions) {
                     let count = 1;
                     for (let k = 1; k < target; k++) {
-                        if (getCell(r + dr * k, c + dc * k) === current) {
-                            count++;
-                        } else {
-                            break;
-                        }
+                        if (getCell(r + dr * k, c + dc * k) === current) count++; else break;
                     }
                     if (count === target) return current;
                 }
@@ -758,20 +1294,18 @@
     }
 
     window.resetGame = () => {
-        const rows = roomDataCache.rows || (roomDataCache.type === 'c4' ? 6 : 3);
-        const cols = roomDataCache.cols || (roomDataCache.type === 'c4' ? 7 : 3);
-        
-        const initBoard = roomDataCache.type === 'c4' 
-            ? Array(rows*cols).fill(0) 
-            : Array(rows*cols).fill("");
-            
-        // 重置時也要考慮無限模式的 moves
-        if (roomDataCache.type === 'ttt-infinite') {
-            set(ref(db, `ongame_room/${currentRoomId}/history`), [{ board: initBoard, moves: [] }]);
-            update(ref(db, `ongame_room/${currentRoomId}`), { board: initBoard, moves: [], turn: 0 });
+        if (!roomDataCache) return;
+        if (roomDataCache.type === 'liar') {
+            startLiarGame(); // 直接重開一局
         } else {
-            set(ref(db, `ongame_room/${currentRoomId}/history`), [initBoard]);
-            update(ref(db, `ongame_room/${currentRoomId}`), { board: initBoard, turn: 0 });
+            // 棋盤重置
+            const rows = roomDataCache.rows || 3;
+            const cols = roomDataCache.cols || 3;
+            const initBoard = roomDataCache.type === 'c4' ? Array(rows*cols).fill(0) : Array(rows*cols).fill("");
+            const history = roomDataCache.type === 'ttt-infinite' ? [{board:initBoard, moves:[]}] : [initBoard];
+            update(ref(db, `ongame_room/${currentRoomId}`), { 
+                board: initBoard, moves: [], turn: 0, history: history 
+            });
         }
         closeWinOverlay();
     };
@@ -782,6 +1316,24 @@
         document.getElementById(id).classList.remove('hidden');
     };
     window.leaveRoom = () => location.reload();
+    window.deleteRoom = (id) => { if(confirm("確定刪除？")) remove(ref(db, 'ongame_room/' + id)); };
+    
+    // 顏色同步
+    const p1Picker = document.getElementById('p1ColorPicker');
+    const p2Picker = document.getElementById('p2ColorPicker');
+    const updateColors = () => {
+        document.documentElement.style.setProperty('--p1-color', p1Picker.value);
+        document.documentElement.style.setProperty('--p2-color', p2Picker.value);
+    };
+    p1Picker.addEventListener('input', updateColors);
+    p2Picker.addEventListener('input', updateColors);
+    p1Picker.addEventListener('change', () => {
+        if(currentRoomId && roomDataCache.type === 'c4') update(ref(db, `ongame_room/${currentRoomId}`), { p1Color: p1Picker.value });
+    });
+    p2Picker.addEventListener('change', () => {
+        if(currentRoomId && roomDataCache.type === 'c4') update(ref(db, `ongame_room/${currentRoomId}`), { p2Color: p2Picker.value });
+    });
+
 </script>
 </body>
 </html>
