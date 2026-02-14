@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>新遊戲！</title>
+    <title>多有趣小遊戲</title>
     <style>
         /* --- 通用樣式 (來自 norma) --- */
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; touch-action: manipulation; transition: background 0.5s; overflow-x: hidden; }
@@ -101,6 +101,7 @@
             flex: 1; position: relative;
             display: flex; justify-content: center; align-items: center;
             perspective: 800px;
+            flex-direction: column; /* 改為直向以便排列提示與牌堆 */
         }
         
         /* 卡牌設計 */
@@ -314,9 +315,10 @@
         <div class="opponents-row" id="liar-opponents"></div>
 
         <div class="liar-table-center">
+            <div id="last-move-info" style="margin-bottom: 10px; font-size:1.1em; color:#fff; background:#d35400; padding:5px 15px; border-radius:20px; box-shadow: 0 4px 5px rgba(0,0,0,0.3); z-index: 10; font-weight: bold;"></div>
+            
             <div id="liar-stack-area" style="position:relative; width:60px; height:90px; border: 2px dashed rgba(255,255,255,0.2); border-radius:6px;">
-                </div>
-            <div id="last-move-info" style="position:absolute; bottom:-30px; font-size:0.8em; color:#bdc3c7; background:rgba(0,0,0,0.5); padding:2px 8px; border-radius:10px;"></div>
+            </div>
         </div>
         
         <div id="my-gun-status" class="my-gun-status hidden"></div>
@@ -683,12 +685,14 @@
         const statusEl = document.getElementById('liar-status-text');
         const targetEl = document.getElementById('liar-target-display');
         const stackArea = document.getElementById('liar-stack-area');
+        const lastMoveInfoEl = document.getElementById('last-move-info');
         const myGunDiv = document.getElementById('my-gun-status');
         
         if (data.gameState === 'waiting') {
             statusEl.innerText = `準備中 (${playerKeys.length}人)`;
             targetEl.classList.add('hidden');
             stackArea.innerHTML = "";
+            lastMoveInfoEl.innerText = ""; // 清空提示
             myGunDiv.classList.add('hidden'); 
             document.getElementById('liar-reveal-overlay').style.display = 'none';
             document.getElementById('gun-anim-overlay').style.display = 'none';
@@ -714,7 +718,7 @@
             
             // --- 特別規則檢查：2人對決且對手無牌 ---
             // 規則更新：如果只剩2人存活，且上家出完牌 (這時 currentHand 是空的)
-            // 下家必須強制抓謊。
+            // 下家必須強制抓謊 (系統自動操作)。
             const aliveKeys = playerKeys.filter(k => !data.guns[k]?.isDead);
             const lastMove = data.stack && data.stack.length > 0 ? data.stack[data.stack.length - 1] : null;
             let forceCall = false;
@@ -728,36 +732,49 @@
             }
             
             if (forceCall) {
-                statusEl.innerHTML = isMyTurn ? 
-                    `<b style="color:#e74c3c">⚠️ 對方已出完牌！強制抓謊！</b>` : 
-                    `對手出完牌，正在被強制檢驗...`;
+                // 系統自動抓謊的提示與邏輯
+                if (isMyTurn) {
+                    statusEl.innerHTML = `<b style="color:#e74c3c">Liar!</b>`;
+                    // 鎖定操作按鈕
+                    document.getElementById('liar-controls').classList.add('hidden');
+
+                    // 確保只觸發一次 timeout
+                    if (!window.liarAutoCallPending) {
+                        window.liarAutoCallPending = true;
+                        setTimeout(() => {
+                            callLiar();
+                            window.liarAutoCallPending = false; // 重置
+                        }, 1000);
+                    }
+                } else {
+                    statusEl.innerHTML = `對手出完牌，系統即將強制檢驗...`;
+                    document.getElementById('liar-controls').classList.add('hidden');
+                }
             } else {
+                // 正常回合
+                window.liarAutoCallPending = false; // 確保重置
+                document.getElementById('liar-controls').classList.remove('hidden'); // 確保按鈕區顯示
+
                 statusEl.innerHTML = isMyTurn ? 
                     `<b style="color:#f1c40f">🔴 輪到你了！請出牌</b>` : 
                     `等待 ${curPlayer?.name || '對手'} 出牌...`;
             }
 
-            // 按鈕邏輯
-            const btnCall = document.getElementById('btn-liar-call');
-            const btnPlay = document.getElementById('btn-liar-play');
-            
-            if (isMyTurn) {
-                if (forceCall) {
-                    // 強制抓謊模式
-                    btnPlay.classList.add('hidden');
-                    btnCall.classList.remove('hidden');
-                    btnCall.innerText = "⚠️ 對方無牌！強制抓謊 ⚠️";
-                    btnCall.style.background = "linear-gradient(to bottom, #c0392b, #96281b)";
-                } else {
-                    // 正常模式
+            // 按鈕邏輯 (如果不是強制模式)
+            if (!forceCall) {
+                const btnCall = document.getElementById('btn-liar-call');
+                const btnPlay = document.getElementById('btn-liar-play');
+                
+                if (isMyTurn) {
                     btnPlay.classList.remove('hidden');
+                    // 只有堆疊有牌才能抓謊
                     btnCall.classList.toggle('hidden', !(data.stack && data.stack.length > 0));
                     btnCall.innerText = "LIAR!";
-                    btnCall.style.background = ""; // 重置樣式
+                    btnCall.disabled = false;
+                } else {
+                    btnPlay.classList.add('hidden');
+                    btnCall.classList.add('hidden');
                 }
-            } else {
-                btnPlay.classList.add('hidden');
-                btnCall.classList.add('hidden');
             }
 
             // 渲染堆疊
@@ -773,8 +790,14 @@
                     stackArea.appendChild(c);
                 });
                 if (data.lastMove) {
-                    document.getElementById('last-move-info').innerText = `${data.lastMove.name} 出了 ${data.lastMove.count} 張`;
+                    // 修改：資訊顯示在上方獨立的 div
+                    lastMoveInfoEl.innerText = `${data.lastMove.name} 出了 ${data.lastMove.count} 張`;
+                    lastMoveInfoEl.style.display = 'block';
+                } else {
+                    lastMoveInfoEl.style.display = 'none';
                 }
+            } else {
+                lastMoveInfoEl.style.display = 'none';
             }
         }
         else if (data.gameState === 'challenge' && !isAnimating) {
@@ -854,7 +877,7 @@
             div.onclick = () => {
                 if (data.gameState !== 'playing') return;
                 // 強制抓謊時不能選牌
-                if (statusEl.innerHTML.includes("強制抓謊")) return; 
+                if (statusEl.innerHTML.includes("強制") || window.liarAutoCallPending) return; 
                 
                 const idx = selectedLiarCards.indexOf(i);
                 if (idx >= 0) {
