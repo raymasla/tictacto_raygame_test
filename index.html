@@ -791,7 +791,8 @@
                 deck: [], 
                 stack: [], 
                 hands: {}, 
-                guns: {} 
+                guns: {},
+                activeSessions: {} // 用於紀錄玩家ID對應 (持久化)
             };
         } else {
             let rows = parseInt(document.getElementById('inputRows').value) || 3;
@@ -813,16 +814,42 @@
         set(roomRef, roomData).then(() => enterRoom(roomRef.key));
     };
 
-    window.enterRoom = (id) => {
+    // --- 修改後的 enterRoom 邏輯 (支援斷線重連與狀態保持) ---
+    window.enterRoom = async (id) => {
         currentRoomId = id;
         showSection('gameArea');
         document.getElementById('myNameDisplay').innerText = myName;
         chatInitTimestamp = Date.now(); 
 
-        const userRef = push(ref(db, `ongame_room/${id}/users`));
-        currentUserKey = userRef.key;
-        onDisconnect(userRef).remove();
+        // 1. 先讀取房間，確認是否有我的紀錄
+        const roomSnapshot = await get(ref(db, `ongame_room/${id}`));
+        const rData = roomSnapshot.val();
         
+        if (!rData) { alert("房間不存在"); leaveRoom(); return; }
+
+        let myKey = null;
+
+        // 檢查是否為騙子桌遊且有紀錄
+        if (rData.type === 'liar' && rData.activeSessions && rData.activeSessions[myName]) {
+            // 找到了！我是舊玩家，恢復身份
+            myKey = rData.activeSessions[myName];
+            console.log("歡迎回來，已恢復身份:", myKey);
+        } else {
+            // 新玩家或非騙子桌遊，產生新Key
+            myKey = push(ref(db, `ongame_room/${id}/users`)).key;
+            
+            // 如果是騙子桌遊，立即註冊我的身份 (如果是等待中)
+            if (rData.type === 'liar' && rData.gameState === 'waiting') {
+                update(ref(db, `ongame_room/${id}/activeSessions`), { [myName]: myKey });
+            }
+        }
+
+        currentUserKey = myKey;
+        const userRef = ref(db, `ongame_room/${id}/users/${currentUserKey}`);
+        
+        // 設置在線狀態 (斷線移除)
+        // 注意：即使斷線移除了 users 節點，activeSessions 依然保留，下次進來可恢復
+        onDisconnect(userRef).remove();
         set(userRef, { name: myName });
 
         onValue(ref(db, 'ongame_room/' + id), (snapshot) => {
@@ -832,8 +859,6 @@
             
             // 狀態鎖檢查：若正在動畫中且遊戲邏輯非關鍵變更，則不更新畫面
             if (isAnimating && data.type === 'liar') {
-                // 如果是在 Playing 或 Waiting，但我們正在動畫中(Challenge/Gun)，暫時忽略更新以維持動畫流暢
-                // 除非 gameState 變回 playing/ended 代表動畫應結束
                 if (data.gameState === 'challenge') {
                    // 允許觸發動畫
                 } else if (data.gameState === 'playing' || data.gameState === 'ended') {
@@ -975,10 +1000,48 @@
             myGunDiv.classList.remove('hidden');
             
             const curPlayerKey = playerKeys[data.turnIndex];
+            
+            // --- 自動跳過機制 (Auto-Skip) ---
+            // 如果輪到的人不在 users 列表 (已離開)，則由在線的人觸發跳過
+            if (!users[curPlayerKey] && !processingAction) {
+                // 為了避免衝突，由 "playerOrder 中第一個在線的玩家" 負責觸發跳過
+                const onlinePlayers = playerKeys.filter(k => users[k]);
+                if (onlinePlayers.length > 0 && onlinePlayers[0] === currentUserKey) {
+                    console.log(`偵測到玩家 ${curPlayerKey} 不在線，嘗試自動跳過...`);
+                    
+                    // 尋找下一個合法的玩家索引
+                    let nextIdx = data.turnIndex;
+                    let found = false;
+                    let loopCount = 0;
+                    while(loopCount < playerKeys.length) {
+                        nextIdx = (nextIdx + 1) % playerKeys.length;
+                        const pId = playerKeys[nextIdx];
+                        const gun = data.guns[pId];
+                        // 找: 不死 且 在線 的人
+                        if (!gun.isDead && users[pId]) {
+                            found = true;
+                            break;
+                        }
+                        loopCount++;
+                    }
+
+                    if (found && nextIdx !== data.turnIndex) {
+                        // 延遲一點點避免過快觸發
+                        processingAction = true;
+                        setTimeout(() => {
+                            update(ref(db, `ongame_room/${currentRoomId}`), { turnIndex: nextIdx })
+                            .then(() => processingAction = false);
+                        }, 1000);
+                    }
+                }
+            }
+            // ---------------------------------
+
             const curPlayer = users[curPlayerKey];
             const isMyTurn = (curPlayerKey === currentUserKey);
             
-            const aliveKeys = playerKeys.filter(k => !data.guns[k]?.isDead);
+            // 檢查是否只剩兩人且對手已空手牌 (強制 Call)
+            const aliveKeys = playerKeys.filter(k => !data.guns[k]?.isDead && users[k]); // 只算在線活人
             const lastMove = data.stack && data.stack.length > 0 ? data.stack[data.stack.length - 1] : null;
             let forceCall = false;
 
@@ -1017,9 +1080,14 @@
                 window.liarAutoCallPending = false; 
                 document.getElementById('liar-controls').classList.remove('hidden'); 
 
-                statusEl.innerHTML = isMyTurn ? 
-                    `<b style="color:#facc15">🔴 輪到你了！請出牌</b>` : 
-                    `等待 ${curPlayer?.name || '對手'} 出牌...`;
+                // 顯示狀態文字
+                if (!curPlayer) {
+                    statusEl.innerHTML = `玩家離線，跳過中...`;
+                } else {
+                    statusEl.innerHTML = isMyTurn ? 
+                        `<b style="color:#facc15">🔴 輪到你了！請出牌</b>` : 
+                        `等待 ${curPlayer.name} 出牌...`;
+                }
             }
 
             if (!forceCall) {
@@ -1077,7 +1145,10 @@
         playerKeys.forEach(k => {
             if (k === currentUserKey) return;
             const u = users[k];
-            if (!u) return;
+            // 若玩家離線，顯示灰色幽靈狀態，但仍顯示在桌上
+            const isOffline = !u;
+            const displayName = u ? u.name : "(已離線)";
+            
             const handSize = data.hands && data.hands[k] ? data.hands[k].length : 0;
             const gun = data.guns ? data.guns[k] : {chamber:0, isDead:false};
             
@@ -1085,10 +1156,12 @@
             if (k === playerKeys[data.turnIndex]) statusClass = "active";
             if (gun.isDead) statusClass = "dead";
             if (!gun.isDead && handSize === 0 && data.gameState === 'playing') statusClass = "escaped"; 
+            if (isOffline) statusClass += " offline-player"; // 可自定義樣式，這裡直接用 dead 效果類似
 
             const div = document.createElement('div');
             div.className = `opponent ${statusClass}`;
-            
+            if (isOffline) div.style.opacity = "0.4"; // 離線淡出
+
             let bulletsHTML = "";
             for(let i=0; i<6; i++) {
                 let bClass = (i < gun.chamber) ? "fired" : "live";
@@ -1096,11 +1169,11 @@
             }
 
             div.innerHTML = `
-                <div style="font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:white;">${u.name}</div>
+                <div style="font-size:0.8em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:white;">${displayName}</div>
                 <div style="font-size:1.5em; margin:5px 0;">🃏 ${handSize}</div>
                 <div class="cylinder-display">${bulletsHTML}</div>
                 ${gun.isDead ? '<span style="position:absolute; top:30%; left:25%; font-size:2em;">💀</span>' : ''}
-                ${statusClass==='escaped' ? '<span style="position:absolute; top:30%; left:20%; font-size:1.5em; color:#10b981; font-weight:bold;">SAFE</span>' : ''}
+                ${statusClass.includes('escaped') ? '<span style="position:absolute; top:30%; left:20%; font-size:1.5em; color:#10b981; font-weight:bold;">SAFE</span>' : ''}
             `;
             oppRow.appendChild(div);
         });
@@ -1298,7 +1371,9 @@
         overlay.style.display = 'none';
         
         const players = rData.playerOrder;
-        if (players[0] === currentUserKey) {
+        // 修正：檢查是否為目前倖存的第一順位玩家負責重置
+        const survivors = players.filter(p => !rData.guns[p].isDead);
+        if (survivors.length > 0 && survivors[0] === currentUserKey) {
             nextLiarRound(rData);
         }
         
@@ -1311,8 +1386,15 @@
         if (isAnimating || processingAction) return; // 鎖定檢查
 
         // 1. 判斷人數以決定牌庫大小
-        const players = Object.keys(roomDataCache.users);
+        const users = roomDataCache.users || {};
+        const players = Object.keys(users);
         const playerCount = players.length;
+        
+        // --- 寫入 activeSessions 以確保遊戲中斷線可重連 ---
+        const activeSessions = {};
+        players.forEach(key => {
+            if(users[key]) activeSessions[users[key].name] = key;
+        });
         
         // 預設標準：6組花色 (18張) + 2 Joker = 20張 (每人5張可供4人)
         let suitCount = 6; 
@@ -1371,6 +1453,7 @@
             gameState: 'intro',
             status: 'playing', 
             playerOrder: players,
+            activeSessions: activeSessions, // 儲存玩家映射
             deckMeta: { suitCount, jokerCount }
         });
 
@@ -1402,13 +1485,16 @@
         
         const aliveCount = players.filter(p => !roomDataCache.guns[p].isDead).length;
 
+        // --- 修改後的找人邏輯：同時檢查是否死亡以及是否在線 ---
         while (loopCount < players.length) {
             nextIdx = (nextIdx + 1) % players.length;
             const pId = players[nextIdx];
             const gun = roomDataCache.guns[pId];
             const pHand = roomDataCache.hands[pId] || []; 
-            
-            if (gun.isDead) {
+            const isUserOnline = roomDataCache.users && roomDataCache.users[pId]; // 檢查是否在線
+
+            // 條件：已死 或 不在線 -> 跳過
+            if (gun.isDead || !isUserOnline) {
                 loopCount++;
                 continue;
             }
@@ -1421,9 +1507,10 @@
             found = true;
             break;
         }
+        // ----------------------------------------------------
 
         if (!found) {
-            alert("遊戲異常：找不到下一位存活玩家");
+            alert("遊戲異常：找不到下一位存活且在線的玩家");
             return;
         }
 
@@ -1462,7 +1549,8 @@
         let isLiar = lastEntry.cards.some(c => c.rank !== target && c.rank !== 'Joker');
         
         const loserId = isLiar ? lastEntry.owner : currentUserKey;
-        const loserName = rData.users[loserId].name;
+        const loserUser = rData.users[loserId];
+        const loserName = loserUser ? loserUser.name : "未知玩家";
 
         const gun = rData.guns[loserId];
         const died = (gun.chamber === gun.bulletPos);
@@ -1484,11 +1572,21 @@
 
     function nextLiarRound(rData) {
         const players = rData.playerOrder;
+        // 只計算還活著的人
         const alive = players.filter(p => !rData.guns[p].isDead);
         const playerCount = alive.length;
 
         if (playerCount <= 1) {
-            const winnerName = playerCount > 0 ? rData.users[alive[0]].name : "無人";
+            let winnerName = "無人";
+            if (playerCount > 0 && rData.users[alive[0]]) {
+                winnerName = rData.users[alive[0]].name;
+            } else if (playerCount > 0) {
+                // 如果贏家也不在線了，從緩存或 activeSessions 找名字
+                const winKey = alive[0];
+                // 這裡簡單處理，如果不幸贏家也剛好斷線，就顯示 Unknown
+                winnerName = "倖存者(離線)"; 
+            }
+
             update(ref(db, `ongame_room/${currentRoomId}`), {
                 gameState: 'ended',
                 winnerName: winnerName
@@ -1528,7 +1626,10 @@
         const hands = {};
         alive.forEach(p => hands[p] = deck.splice(0, 5));
 
-        const starter = alive[Math.floor(Math.random()*alive.length)];
+        // 盡量找一個在線的人開始，如果都離線就隨機
+        let starter = alive.find(p => rData.users && rData.users[p]);
+        if (!starter) starter = alive[Math.floor(Math.random()*alive.length)];
+        
         const startIdx = players.indexOf(starter);
 
         update(ref(db, `ongame_room/${currentRoomId}`), {
