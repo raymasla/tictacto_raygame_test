@@ -500,6 +500,121 @@
         ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
 
+        /* ========== UNO 遊戲區 (李騙子桌遊風格) ========== */
+        :root {
+            --uno-card-w: 70px;
+            --uno-card-h: 105px;
+            --uno-red: #ef4444;
+            --uno-blue: #3b82f6;
+            --uno-green: #10b981;
+            --uno-yellow: #fbbf24;
+        }
+        #uno-wrapper {
+            background: radial-gradient(circle, #1e3a5f 0%, #0f172a 100%);
+            border: 8px solid #334155;
+            border-radius: 20px;
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.6), 0 12px 30px rgba(0,0,0,0.5);
+            padding: 10px;
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+        }
+        .uno-layout { display: flex; flex-direction: column; min-height: 480px; }
+        .uno-header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.5); padding: 8px 15px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1); margin-bottom: 10px;
+        }
+        .uno-room-info { font-size: 0.9rem; color: #cbd5e1; }
+        .uno-header-btns { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .uno-table-area {
+            flex: 1; position: relative; display: flex; justify-content: center; align-items: center;
+            gap: 30px; perspective: 800px; min-height: 180px;
+        }
+        .uno-opponents-bar {
+            position: absolute; top: 8px; left: 0; right: 0;
+            display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+        }
+        .uno-opponent-card {
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px; padding: 6px 12px; min-width: 60px;
+            display: flex; flex-direction: column; align-items: center; transition: 0.3s;
+        }
+        .uno-opponent-card.active { border-color: var(--uno-yellow); background: rgba(251, 191, 36, 0.2); transform: scale(1.05); }
+        .uno-opponent-card .opp-name { font-size: 0.7rem; color: #e2e8f0; max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+        .uno-opponent-card .opp-count { font-size: 1.1rem; font-weight: bold; color: #fff; }
+        .uno-direction-indicator {
+            position: absolute; width: 200px; height: 200px;
+            border: 2px dashed rgba(255,255,255,0.1); border-radius: 50%;
+            pointer-events: none; opacity: 0.25;
+            animation: unoSpin 10s linear infinite;
+        }
+        @keyframes unoSpin { 100% { transform: rotate(360deg); } }
+        .uno-pile {
+            width: var(--uno-card-w); height: var(--uno-card-h); border-radius: 10px;
+            position: relative; cursor: pointer; transition: transform 0.2s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center; font-size: 0.85em; color: rgba(255,255,255,0.6);
+        }
+        .uno-deck {
+            background: repeating-linear-gradient(45deg, #334155, #334155 8px, #1e293b 8px, #1e293b 16px);
+            border: 2px solid #64748b;
+        }
+        .uno-discard { border: 2px dashed rgba(255,255,255,0.2); }
+        #uno-center-message {
+            position: absolute; bottom: 60px; font-weight: bold; color: #facc15;
+            text-shadow: 0 2px 4px black; font-size: 14px;
+            background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px;
+        }
+        .uno-bottom-section {
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 10px 0; border-radius: 0 0 12px 12px;
+        }
+        .uno-controls { display: flex; gap: 12px; justify-content: center; margin-bottom: 8px; flex-wrap: wrap; }
+        .uno-controls .btn-game { min-width: 90px; padding: 10px 20px; font-size: 1em; }
+        .uno-controls .btn-game.btn-secondary { background: linear-gradient(to bottom, #475569, #334155); color: white; }
+        .uno-hand-scroll {
+            display: flex; justify-content: center; align-items: flex-end;
+            overflow-x: auto; padding: 15px 0; min-height: 120px; gap: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .uno-card {
+            width: var(--uno-card-w); height: var(--uno-card-h); border-radius: 8px;
+            position: relative; display: flex; justify-content: center; align-items: center;
+            box-shadow: -2px 0 6px rgba(0,0,0,0.4); border: 2px solid white;
+            user-select: none; transition: transform 0.2s; cursor: pointer;
+            flex-shrink: 0; margin-left: -28px; transform-origin: center bottom;
+        }
+        .uno-card:first-child { margin-left: 0 !important; }
+        .uno-card:hover { transform: translateY(-20px) scale(1.08); z-index: 50; box-shadow: 0 6px 18px rgba(0,0,0,0.5); }
+        .uno-card.selected { transform: translateY(-35px) scale(1.12); z-index: 49; border-color: var(--uno-yellow); box-shadow: 0 0 20px var(--uno-yellow); }
+        .uno-card.disabled { filter: grayscale(0.7) brightness(0.5); cursor: not-allowed; pointer-events: none; }
+        .uno-card .card-oval { width: 85%; height: 58%; background: white; border-radius: 50% / 45%; transform: rotate(-30deg); display: flex; align-items: center; justify-content: center; }
+        .uno-card .card-symbol { font-family: 'Arial Black'; font-size: 1.8em; }
+        .uno-card .corner { position: absolute; font-family: 'Arial Black'; font-size: 0.85em; color: white; text-shadow: 1px 1px 2px black; }
+        .uno-card .tl { top: 3px; left: 5px; }
+        .uno-card .br { bottom: 3px; right: 5px; transform: rotate(180deg); }
+        .uno-bg-red { background: var(--uno-red); }
+        .uno-bg-blue { background: var(--uno-blue); }
+        .uno-bg-green { background: var(--uno-green); }
+        .uno-bg-yellow { background: var(--uno-yellow); }
+        .uno-bg-black { background: #1e293b; border-color: #64748b; }
+        .uno-bg-wild { background: conic-gradient(from 180deg, var(--uno-red) 0% 25%, var(--uno-blue) 25% 50%, var(--uno-green) 50% 75%, var(--uno-yellow) 75% 100%); color: black; }
+        .uno-tint-red { background: var(--uno-red) !important; }
+        .uno-tint-blue { background: var(--uno-blue) !important; }
+        .uno-tint-green { background: var(--uno-green) !important; }
+        .uno-tint-yellow { background: var(--uno-yellow) !important; }
+        .uno-color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 15px; }
+        .uno-color-btn { height: 70px; border-radius: 12px; border: 3px solid white; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .uno-color-btn:hover { transform: scale(1.05); }
+        #uno-shout { animation: unoShoutPop 1.5s forwards; }
+        @keyframes unoShoutPop {
+            0% { transform: translate(-50%,-50%) scale(0); opacity: 0; }
+            20% { opacity: 1; }
+            60% { transform: translate(-50%,-50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -516,6 +631,7 @@
     <button class="menu-btn" onclick="showCreateRoom('ttt')">創立 圈圈叉叉 ⭕❌</button>
     <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 (🔴🔵)</button>
     <button class="menu-btn btn-liar" onclick="showCreateRoom('liar')">創立 騙子桌遊 🔫🃏</button>
+    <button class="menu-btn" style="background: linear-gradient(135deg, #f59e0b, #ef4444);" onclick="showCreateRoom('uno')">創立 UNO 🃏</button>
 </div>
 
 <div id="createRoomSection" class="container hidden">
@@ -545,6 +661,13 @@
         <div id="infinite-hint" style="font-size: 0.85em; color: #a78bfa; margin-bottom: 10px; display:none; background: rgba(139, 92, 246, 0.1); padding: 8px; border-radius: 6px;">
             ※ 無限模式：雙方最多 3 顆棋子，下第 4 顆最早的消失。
         </div>
+    </div>
+
+    <div id="unoSettings" class="hidden" style="text-align: left; font-size: 0.9em; padding:15px; border-radius:8px; margin:15px 0; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-left: 5px solid #f59e0b;">
+        <h4 style="margin:0 0 8px 0; color:#fbbf24;">🃏 UNO 規則設定</h4>
+        <label style="display:block; margin:8px 0;"><input type="checkbox" id="uno-rule-chain" style="margin-right:6px;"> 連出 (Chain)</label>
+        <label style="display:block; margin:8px 0;"><input type="checkbox" id="uno-rule-stack" style="margin-right:6px;"> 疊加 (Stack +2/+4)</label>
+        <div class="input-group" style="margin-top:10px;"><label>初始手牌張數:</label><input type="number" id="uno-initialHandSize" min="1" max="20" value="7" style="width:80px;"></div>
     </div>
 
     <div id="liarSettings" class="hidden" style="text-align: left; font-size: 0.9em; padding:15px; border-radius:8px; margin:15px 0;">
@@ -633,6 +756,75 @@
         </div>
     </div>
 
+    <!-- UNO 遊戲區 (李騙子桌遊風格) -->
+    <div id="uno-wrapper" class="hidden" style="position:relative;">
+        <div class="uno-layout">
+            <div class="uno-header">
+                <div class="uno-room-info">
+                    <span id="uno-room-name">Room</span> | <span id="uno-rules-display">Rules</span>
+                </div>
+                <div class="uno-header-btns">
+                    <span id="uno-turn-status">等待開始...</span>
+                    <button class="btn-sm btn-green" style="margin-left:8px;" onclick="openUnoSettings()">⚙️ 設定</button>
+                </div>
+            </div>
+            <div class="uno-table-area">
+                <div class="uno-opponents-bar" id="uno-opponents-container"></div>
+                <div class="uno-direction-indicator" id="uno-dir-indicator"></div>
+                <div class="uno-pile uno-deck" id="uno-deck" onclick="unoDrawCardClick()">
+                    <div>UNO<br><small>抽牌</small></div>
+                </div>
+                <div class="uno-pile uno-discard" id="uno-discard-pile"></div>
+                <div id="uno-center-message"></div>
+            </div>
+            <div class="uno-bottom-section">
+                <div class="uno-controls" id="uno-controls-area">
+                    <button id="uno-btn-start" class="btn-game btn-green hidden" onclick="unoStartGame()">開始遊戲</button>
+                    <button id="uno-btn-pass" class="btn-game btn-secondary hidden" onclick="unoPassTurn()">抽牌</button>
+                    <button id="uno-btn-play" class="btn-game btn-play hidden" onclick="unoPlaySelected()">出牌</button>
+                </div>
+                <div class="uno-hand-scroll" id="uno-my-hand"></div>
+            </div>
+        </div>
+        <div id="uno-settings-modal" class="modal-overlay hidden">
+            <div class="modal-box">
+                <h3>⚙️ UNO 設定</h3>
+                <div style="text-align:left; margin-bottom:15px;">
+                    <label style="color:#cbd5e1;">更改暱稱</label>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <input type="text" id="uno-setting-nickname" maxlength="10" style="flex:1;">
+                        <button class="btn-sm btn-green" onclick="updateUnoNickname()">儲存</button>
+                    </div>
+                </div>
+                <div style="text-align:left; margin-bottom:15px;">
+                    <label style="color:#cbd5e1;">畫面縮放 (卡牌大小)</label>
+                    <input type="range" id="uno-setting-scale" min="0.6" max="1.5" step="0.1" value="1" style="width:100%; accent-color:#8b5cf6;" oninput="updateUnoScale(this.value)">
+                </div>
+                <button class="btn-sm" style="background:#475569; color:white;" onclick="closeUnoSettings()">關閉</button>
+            </div>
+        </div>
+        <div id="uno-draw-modal" class="modal-overlay hidden">
+            <div class="modal-box">
+                <h3>你抽到了</h3>
+                <div id="uno-drawn-card-placeholder" style="display:flex; justify-content:center; margin:15px 0;"></div>
+                <p id="uno-draw-msg" style="color:#94a3b8; font-size:0.9em;"></p>
+                <div id="uno-draw-actions" style="display:flex; gap:10px; justify-content:center;"></div>
+            </div>
+        </div>
+        <div id="uno-color-modal" class="modal-overlay hidden">
+            <div class="modal-box">
+                <h3>選擇顏色</h3>
+                <div class="uno-color-grid">
+                    <div class="uno-color-btn uno-bg-red" onclick="unoSelectWildColor('red')"></div>
+                    <div class="uno-color-btn uno-bg-blue" onclick="unoSelectWildColor('blue')"></div>
+                    <div class="uno-color-btn uno-bg-green" onclick="unoSelectWildColor('green')"></div>
+                    <div class="uno-color-btn uno-bg-yellow" onclick="unoSelectWildColor('yellow')"></div>
+                </div>
+            </div>
+        </div>
+        <div id="uno-shout" style="position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); font-size:6em; font-weight:900; color:#fbbf24; text-shadow:4px 4px 0 #ef4444; z-index:3000; pointer-events:none; opacity:0;">UNO!</div>
+    </div>
+
     <button id="btn-undo" class="btn-undo" onclick="undoStep()">⬅ 悔棋 (Undo)</button>
 
     <div id="chat-area">
@@ -690,7 +882,17 @@
     let selectedLiarCards = []; 
     let isAnimating = false;
     let processingAction = false; 
-    let chatInitTimestamp = Date.now(); 
+    let chatInitTimestamp = Date.now();
+
+    // UNO 遊戲狀態
+    let unoSelectedIndices = [];
+    let unoIsProcessing = false;
+    let unoPendingDrawnCard = null;
+    let unoPendingPlayCards = null;
+    let unoLastHandsCount = {};
+    let unoLastRenderedAction = "";
+    let unoCenterMsgTimeoutId = null;
+    let unoShowGameMsg = true; 
 
     // --- 玩家名稱初始化 (Sequence 1~99) ---
     let myName = localStorage.getItem('playerName');
@@ -748,10 +950,11 @@
         }
         
         Object.entries(rooms).reverse().forEach(([id, r]) => {
-            // 計算線上人數 (只計算 status 為 online 的)
+            // 計算線上人數 (UNO 用 online，其餘用 status !== 'offline')
             let userCount = 0;
             if (r.users) {
-                userCount = Object.values(r.users).filter(u => u.status !== 'offline').length;
+                if (r.type === 'uno') userCount = Object.values(r.users).filter(u => u.online).length;
+                else userCount = Object.values(r.users).filter(u => u.status !== 'offline').length;
             }
             totalInGameCount += userCount;
 
@@ -759,13 +962,14 @@
             if (r.type === 'c4') typeName = '🔵重力四連';
             if (r.type === 'ttt-infinite') typeName = '♾️無限圈叉';
             if (r.type === 'liar') typeName = '🔫騙子桌遊';
+            if (r.type === 'uno') typeName = '🃏 UNO';
 
             const hasPass = r.password && r.password !== "";
             const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
             const passwordArg = hasPass ? r.password : ""; 
             
             let statusBadge = '<span class="status-badge status-wait">等待中</span>';
-            if (r.status === 'playing' || (r.turn > 0 && r.type !== 'liar')) {
+            if (r.status === 'playing' || (r.turn > 0 && r.type !== 'liar') || (r.type === 'uno' && r.gameState === 'playing')) {
                 statusBadge = '<span class="status-badge status-play">遊戲中</span>';
             }
 
@@ -773,6 +977,9 @@
             if (r.type === 'liar') {
                 metaInfo = `人數: ${userCount}`;
                 if (r.anytimeLiar) metaInfo += ` | 隨時抓謊ON`;
+            } else if (r.type === 'uno') {
+                metaInfo = `人數: ${userCount}`;
+                if (r.settings) metaInfo += ` | 連出:${r.settings.chain?'ON':'OFF'} 疊加:${r.settings.stack?'ON':'OFF'}`;
             } else {
                 const rows = r.rows || 3;
                 const cols = r.cols || 3;
@@ -813,6 +1020,8 @@
         
         if (roomData && roomData.type === 'liar') {
             handleLiarJoin(id, roomData);
+        } else if (roomData && roomData.type === 'uno') {
+            handleUnoJoin(id, roomData);
         } else {
             enterRoom(id);
         }
@@ -825,9 +1034,17 @@
     window.handleLiarJoin = (id, roomData) => {
         pendingRoomId = id;
         pendingRoomData = roomData;
-        // 顯示 Q版 Modal，並預填當前名字
         document.getElementById('modalNameInput').value = myName;
         document.getElementById('modalTitle').innerText = "👇輸入暱稱開始遊戲！👇";
+        document.getElementById('customNameModal').classList.remove('hidden');
+        document.getElementById('modalNameInput').focus();
+    };
+
+    window.handleUnoJoin = (id, roomData) => {
+        pendingRoomId = id;
+        pendingRoomData = roomData;
+        document.getElementById('modalNameInput').value = myName;
+        document.getElementById('modalTitle').innerText = "👇輸入暱稱進入 UNO 房間👇";
         document.getElementById('customNameModal').classList.remove('hidden');
         document.getElementById('modalNameInput').focus();
     };
@@ -847,12 +1064,14 @@
         let existingKey = null;
         let isOnline = false;
 
-        // 檢查暱稱是否存在
+        // 檢查暱稱是否存在 (騙子用 status，UNO 用 online)
         for (const [key, user] of Object.entries(users)) {
             if (user.name === inputName) {
                 existingKey = key;
-                if (user.status !== 'offline') {
-                    isOnline = true;
+                if (pendingRoomData.type === 'uno') {
+                    if (user.online) isOnline = true;
+                } else {
+                    if (user.status !== 'offline') isOnline = true;
                 }
                 break;
             }
@@ -898,6 +1117,7 @@
         const btnConfirm = document.getElementById('btn-confirm');
         const normalSettings = document.getElementById('normalSettings');
         const liarSettings = document.getElementById('liarSettings');
+        const unoSettings = document.getElementById('unoSettings');
         
         let title = "創立房間";
         document.getElementById('createTitle').innerText = title;
@@ -905,12 +1125,19 @@
         btnInfinite.classList.add('hidden');
         normalSettings.classList.remove('hidden');
         liarSettings.classList.add('hidden');
+        if (unoSettings) unoSettings.classList.add('hidden');
         
         if (type === 'liar') {
             document.getElementById('createTitle').innerText = "創立 騙子桌遊 (Liar's Deck)";
             normalSettings.classList.add('hidden');
             liarSettings.classList.remove('hidden');
             btnConfirm.innerText = "創立 賭局";
+            btnConfirm.onclick = createRoom;
+        } else if (type === 'uno') {
+            document.getElementById('createTitle').innerText = "創立 UNO 房間";
+            normalSettings.classList.add('hidden');
+            if (unoSettings) unoSettings.classList.remove('hidden');
+            btnConfirm.innerText = "創立 UNO 房間";
             btnConfirm.onclick = createRoom;
         } else if (type === 'c4') {
             document.getElementById('createTitle').innerText = '創立 四連棋';
@@ -951,6 +1178,25 @@
                 guns: {},
                 anytimeLiar: anytimeLiar 
             };
+        } else if (selectedGameType === 'uno') {
+            const chain = document.getElementById('uno-rule-chain') && document.getElementById('uno-rule-chain').checked;
+            const stack = document.getElementById('uno-rule-stack') && document.getElementById('uno-rule-stack').checked;
+            const initialHandSize = parseInt((document.getElementById('uno-initialHandSize') && document.getElementById('uno-initialHandSize').value) || 7) || 7;
+            roomData = {
+                ...roomData,
+                type: 'uno',
+                gameState: 'waiting',
+                settings: { chain: !!chain, stack: !!stack },
+                initialHandSize,
+                users: {},
+                turnIndex: 0,
+                direction: 1,
+                accumulatedDraw: 0,
+                currentColor: 'red',
+                deck: [],
+                discardPile: [],
+                lastAction: ''
+            };
         } else {
             let rows = parseInt(document.getElementById('inputRows').value) || 3;
             let cols = parseInt(document.getElementById('inputCols').value) || 3;
@@ -969,9 +1215,10 @@
         }
 
         set(roomRef, roomData).then(() => {
-            // 創立者不需要暱稱檢查，直接進入
             if (selectedGameType === 'liar') {
                 handleLiarJoin(roomRef.key, roomData);
+            } else if (selectedGameType === 'uno') {
+                handleUnoJoin(roomRef.key, roomData);
             } else {
                 enterRoom(roomRef.key);
             }
@@ -998,16 +1245,16 @@
         get(ref(db, `ongame_room/${id}/type`)).then((snap) => {
             const type = snap.val();
             isLiarGame = (type === 'liar');
+            const isUnoGame = (type === 'uno');
             
-            // 更新狀態
-            update(userRef, { name: myName, status: 'online' });
-
-            // 設置斷線行為
-            if (isLiarGame) {
-                // 騙子桌遊：斷線不刪除，只改狀態為 offline
+            if (isUnoGame) {
+                update(userRef, { name: myName, online: true });
+                onDisconnect(userRef).update({ online: false });
+            } else if (isLiarGame) {
+                update(userRef, { name: myName, status: 'online' });
                 onDisconnect(userRef).update({ status: 'offline' });
             } else {
-                // 其他遊戲：斷線直接刪除
+                update(userRef, { name: myName, status: 'online' });
                 onDisconnect(userRef).remove();
             }
         });
@@ -1030,6 +1277,8 @@
             
             if (data.type === 'liar') {
                 renderLiarGame(data);
+            } else if (data.type === 'uno') {
+                renderUnoGame(data);
             } else {
                 renderBoardGame(data);
             }
@@ -1067,9 +1316,534 @@
         setTimeout(() => el.remove(), 3000);
     }
 
+    // --- UNO 遊戲渲染與邏輯 ---
+    function renderUnoGame(data) {
+        document.getElementById('ttt-board').classList.add('hidden');
+        document.getElementById('c4-game-wrapper').classList.add('hidden');
+        document.getElementById('liar-wrapper').classList.add('hidden');
+        document.getElementById('btn-undo').classList.add('hidden');
+        document.getElementById('btn-restart-gen').classList.add('hidden');
+        document.getElementById('status').classList.add('hidden');
+        document.getElementById('uno-wrapper').classList.remove('hidden');
+
+        document.getElementById('roomDisplayInfo').innerText = data.name;
+        document.getElementById('uno-room-name').innerText = data.name;
+        document.getElementById('uno-rules-display').innerText = `連出:${(data.settings&&data.settings.chain)?'ON':'OFF'} | 疊加:${(data.settings&&data.settings.stack)?'ON':'OFF'}`;
+
+        const users = Object.keys(data.users || {});
+        const order = data.playerOrder || users;
+        const currentTurnUser = order[data.turnIndex];
+        const isMyTurn = (currentTurnUser === currentUserKey);
+
+        if (data.hands) {
+            Object.entries(data.hands).forEach(([uid, hand]) => {
+                const count = Array.isArray(hand) ? hand.length : 0;
+                const prev = unoLastHandsCount[uid];
+                if (count === 1 && prev !== 1) showUnoAnim();
+                unoLastHandsCount[uid] = count;
+            });
+            Object.keys(unoLastHandsCount).forEach((uid) => {
+                if (!data.hands[uid]) delete unoLastHandsCount[uid];
+            });
+        }
+
+        const statusEl = document.getElementById('uno-turn-status');
+        if (data.gameState === 'waiting') {
+            statusEl.innerText = `等待中 (${users.length}人)`;
+            document.getElementById('uno-btn-start').classList.toggle('hidden', users.length < 2);
+            document.getElementById('uno-btn-play').classList.add('hidden');
+            document.getElementById('uno-btn-pass').classList.add('hidden');
+        } else if (data.gameState === 'playing') {
+            document.getElementById('uno-btn-start').classList.add('hidden');
+            if (isMyTurn) {
+                statusEl.innerText = "👉 輪到你了！";
+                statusEl.style.color = "#facc15";
+            } else {
+                const name = data.users[currentTurnUser]?.name || "對手";
+                statusEl.innerText = `等待 ${name}...`;
+                statusEl.style.color = "#cbd5e1";
+            }
+            const btnPlay = document.getElementById('uno-btn-play');
+            const btnPass = document.getElementById('uno-btn-pass');
+            if (isMyTurn) {
+                btnPlay.classList.toggle('hidden', unoSelectedIndices.length === 0);
+                btnPass.classList.toggle('hidden', false);
+                btnPass.innerText = (data.accumulatedDraw > 0) ? `罰抽 (${data.accumulatedDraw})` : "抽牌";
+            } else {
+                btnPlay.classList.add('hidden');
+                btnPass.classList.add('hidden');
+            }
+        } else if (data.gameState === 'ended') {
+            const winner = data.users[data.winner]?.name;
+            statusEl.innerText = `🏆 贏家: ${winner}`;
+            setTimeout(() => { if (confirm("重新開始?")) unoResetGame(); }, 1500);
+        }
+
+        const centerMsgEl = document.getElementById('uno-center-message');
+        const currentAction = data.lastAction || "";
+        if (currentAction && unoShowGameMsg) {
+            if (currentAction !== unoLastRenderedAction) {
+                centerMsgEl.innerHTML = currentAction;
+                centerMsgEl.style.opacity = "1";
+                if (unoCenterMsgTimeoutId) clearTimeout(unoCenterMsgTimeoutId);
+                unoCenterMsgTimeoutId = setTimeout(() => { centerMsgEl.style.opacity = "0"; }, 3000);
+                unoLastRenderedAction = currentAction;
+            }
+        } else {
+            centerMsgEl.style.opacity = "0";
+            if (unoCenterMsgTimeoutId) { clearTimeout(unoCenterMsgTimeoutId); unoCenterMsgTimeoutId = null; }
+            unoLastRenderedAction = "";
+        }
+
+        const oppContainer = document.getElementById('uno-opponents-container');
+        oppContainer.innerHTML = "";
+        order.forEach((uid, idx) => {
+            if (uid === currentUserKey) return;
+            const u = data.users[uid];
+            const handCount = (data.hands && data.hands[uid]) ? data.hands[uid].length : 0;
+            const isActive = (data.gameState === 'playing' && idx === data.turnIndex);
+            const isOffline = !u.online;
+            const div = document.createElement('div');
+            div.className = `uno-opponent-card ${isActive ? 'active' : ''}`;
+            div.innerHTML = `<div class="opp-name">${isOffline ? u.name + ' (離線)' : u.name}</div><div class="opp-count">${handCount}</div><small style="font-size:0.6rem; color:#94a3b8;">cards</small>`;
+            oppContainer.appendChild(div);
+        });
+
+        const discardEl = document.getElementById('uno-discard-pile');
+        discardEl.innerHTML = "";
+        if (data.discardPile && data.discardPile.length > 0) {
+            const total = data.discardPile.length;
+            const startIdx = Math.max(0, total - 5);
+            const recentCards = data.discardPile.slice(startIdx);
+            recentCards.forEach((card, idx) => {
+                let visualCard = { ...card };
+                const isTop = (idx === recentCards.length - 1);
+                let extraClass = "";
+                if (isTop && card.color === 'black') {
+                    if (data.currentColor === 'red') extraClass = "uno-tint-red";
+                    else if (data.currentColor === 'blue') extraClass = "uno-tint-blue";
+                    else if (data.currentColor === 'green') extraClass = "uno-tint-green";
+                    else if (data.currentColor === 'yellow') extraClass = "uno-tint-yellow";
+                }
+                const cardDom = createUnoCardDOM(visualCard);
+                if (extraClass) cardDom.classList.add(extraClass);
+                cardDom.style.position = "absolute";
+                const offset = idx * 3;
+                cardDom.style.top = (-offset) + "px";
+                cardDom.style.left = (offset) + "px";
+                cardDom.style.transform = "rotate(" + (card.rotation || (Math.random()*20-10)) + "deg)";
+                cardDom.style.zIndex = String(idx);
+                discardEl.appendChild(cardDom);
+            });
+        }
+
+        const dirEl = document.getElementById('uno-dir-indicator');
+        if (dirEl) dirEl.style.animationDirection = (data.direction === 1) ? 'normal' : 'reverse';
+
+        renderUnoHand(data);
+    }
+
+    function renderUnoHand(data) {
+        const container = document.getElementById('uno-my-hand');
+        container.innerHTML = "";
+        const myHand = (data.hands && data.hands[currentUserKey]) || [];
+        if (myHand.length === 0) return;
+        const overlapMargin = -28;
+        myHand.forEach((c, idx) => {
+            const el = createUnoCardDOM(c);
+            el.style.marginLeft = (idx === 0) ? '0' : (overlapMargin + 'px');
+            el.style.zIndex = idx;
+            if (data.gameState === 'playing' && data.playerOrder[data.turnIndex] === currentUserKey) {
+                el.onclick = () => unoToggleSelect(idx, c);
+            } else el.classList.add('disabled');
+            if (unoSelectedIndices.includes(idx)) el.classList.add('selected');
+            container.appendChild(el);
+        });
+    }
+
+    function createUnoCardDOM(card) {
+        let symbol = card.value;
+        if (card.type === 'skip') symbol = '⊘';
+        if (card.type === 'reverse') symbol = '⇄';
+        if (card.type === 'draw2') symbol = '+2';
+        if (card.type === 'wild') symbol = '⊕';
+        if (card.type === 'wild4') symbol = '+4';
+        let bgClass = 'uno-bg-' + card.color;
+        if ((card.type === 'wild' || card.type === 'wild4') && card.color === 'black') bgClass = 'uno-bg-wild';
+        const el = document.createElement('div');
+        el.className = `uno-card ${bgClass}`;
+        el.innerHTML = `<div class="corner tl">${symbol}</div><div class="card-oval"><span class="card-symbol">${symbol}</span></div><div class="corner br">${symbol}</div>`;
+        return el;
+    }
+
+    function getUnoSortWeight(card) {
+        const colorWeight = { red: 1000, blue: 2000, green: 3000, yellow: 4000, black: 5000 };
+        const typeWeight = { '0':0,'1':1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'skip':20,'reverse':21,'draw2':22,'wild':50,'wild4':51 };
+        return (colorWeight[card.color] || 0) + (typeWeight[card.value] || 0);
+    }
+    function sortUnoHandArray(hand) { return hand.sort((a, b) => getUnoSortWeight(a) - getUnoSortWeight(b)); }
+
+    window.unoToggleSelect = (idx, card) => {
+        if (unoIsProcessing) return;
+        const data = roomDataCache;
+        if (!data || !data.settings) return;
+        if (!data.settings.chain) unoSelectedIndices = [idx];
+        else {
+            if (unoSelectedIndices.includes(idx)) unoSelectedIndices = unoSelectedIndices.filter(i => i !== idx);
+            else {
+                if (unoSelectedIndices.length > 0) {
+                    const firstCard = data.hands[currentUserKey][unoSelectedIndices[0]];
+                    if (card.value === firstCard.value) unoSelectedIndices.push(idx);
+                    else unoSelectedIndices = [idx];
+                } else unoSelectedIndices = [idx];
+            }
+        }
+        renderUnoGame(data);
+    };
+
+    window.unoStartGame = async () => {
+        const data = roomDataCache;
+        const users = Object.keys(data.users || {});
+        const deck = unoGenerateDeck();
+        const hands = {};
+        const handSize = data.initialHandSize || 7;
+        users.forEach(u => { hands[u] = sortUnoHandArray(deck.splice(0, handSize)); });
+        let firstCard = deck.pop();
+        while (firstCard.type !== 'n') { deck.unshift(firstCard); firstCard = deck.pop(); }
+        const firstCardWithRotation = { ...firstCard, rotation: (Math.random()*20-10).toFixed(1) };
+        await update(ref(db, `ongame_room/${currentRoomId}`), {
+            gameState: 'playing', deck, hands, discardPile: [firstCardWithRotation],
+            playerOrder: users.sort(() => Math.random() - 0.5), turnIndex: 0, direction: 1,
+            currentColor: firstCard.color, accumulatedDraw: 0, lastAction: "遊戲開始！", status: 'playing'
+        });
+    };
+
+    window.unoPlaySelected = () => {
+        if (unoSelectedIndices.length === 0) return;
+        const data = roomDataCache;
+        const hand = data.hands[currentUserKey];
+        const cardsToPlay = unoSelectedIndices.map(i => hand[i]);
+        const top = data.discardPile[data.discardPile.length - 1];
+        const lead = cardsToPlay[0];
+        if (data.accumulatedDraw > 0) {
+            const isValid = (top.type === 'draw2' && lead.type === 'draw2') || (top.type === 'wild4' && lead.type === 'wild4');
+            if (!isValid) return alert("必須出同樣的加牌(+2/+4)來疊加，或按罰抽");
+        } else {
+            const colorMatch = (lead.color === data.currentColor);
+            const valueMatch = (lead.value === top.value);
+            const isWild = (lead.color === 'black');
+            if (!colorMatch && !valueMatch && !isWild) return alert("這張牌無法打出！");
+        }
+        if (cardsToPlay[cardsToPlay.length - 1].color === 'black') {
+            unoPendingPlayCards = { indices: [...unoSelectedIndices], cards: cardsToPlay };
+            document.getElementById('uno-color-modal').classList.remove('hidden');
+            return;
+        }
+        executeUnoMove(unoSelectedIndices, cardsToPlay, null);
+    };
+
+    window.unoSelectWildColor = (color) => {
+        document.getElementById('uno-color-modal').classList.add('hidden');
+        if (unoPendingPlayCards && unoPendingPlayCards.fromDraw) {
+            finishUnoPlayDrawn(unoPendingPlayCards.cards[0], color);
+            unoPendingPlayCards = null;
+        } else if (unoPendingPlayCards) {
+            executeUnoMove(unoPendingPlayCards.indices, unoPendingPlayCards.cards, color);
+            unoPendingPlayCards = null;
+        }
+    };
+
+    async function executeUnoMove(indices, cards, nextColor) {
+        unoIsProcessing = true;
+        const data = roomDataCache;
+        let newHand = [...data.hands[currentUserKey]];
+        indices.forEach(i => newHand[i] = null);
+        newHand = newHand.filter(c => c !== null);
+        newHand = sortUnoHandArray(newHand);
+
+        const updates = {};
+        updates[`ongame_room/${currentRoomId}/hands/${currentUserKey}`] = newHand;
+        let dir = data.direction, acc = data.accumulatedDraw, steps = 1, newlyAddedAcc = 0;
+        let actionMsg = "";
+        const myNameInGame = data.users[currentUserKey].name;
+
+        cards.forEach(c => {
+            if (c.type === 'reverse') {
+                if (data.playerOrder.length === 2) steps += 1;
+                else dir *= -1;
+                actionMsg = `${myNameInGame} 進行了迴轉！`;
+            }
+            if (c.type === 'skip') {
+                steps += 1;
+                let targetIdx = (data.turnIndex + (dir * 1)) % data.playerOrder.length;
+                if (targetIdx < 0) targetIdx += data.playerOrder.length;
+                actionMsg = `${myNameInGame} 禁止了 ${data.users[data.playerOrder[targetIdx]].name}！`;
+            }
+            if (c.type === 'draw2') {
+                newlyAddedAcc += 2;
+                let targetIdx = (data.turnIndex + (dir * 1)) % data.playerOrder.length;
+                if (targetIdx < 0) targetIdx += data.playerOrder.length;
+                actionMsg = `${myNameInGame} 讓 ${data.users[data.playerOrder[targetIdx]].name} 多了 2 張牌`;
+            }
+            if (c.type === 'wild4') {
+                newlyAddedAcc += 4;
+                let targetIdx = (data.turnIndex + (dir * 1)) % data.playerOrder.length;
+                if (targetIdx < 0) targetIdx += data.playerOrder.length;
+                const colorMap = { red: '紅色', blue: '藍色', green: '綠色', yellow: '黃色' };
+                actionMsg = `${myNameInGame} 讓 ${data.users[data.playerOrder[targetIdx]].name} 多了 4 張牌 並選取了 ${colorMap[nextColor]}`;
+            }
+        });
+        if (actionMsg) updates[`ongame_room/${currentRoomId}/lastAction`] = actionMsg;
+
+        let nc = nextColor || cards[cards.length - 1].color;
+        if (nc === 'black') nc = 'red';
+        const cardsWithRotation = cards.map(card => ({ ...card, rotation: card.rotation || (Math.random()*20-10).toFixed(1) }));
+
+        if (newlyAddedAcc > 0 && !(data.settings && data.settings.stack)) {
+            let nextIdx = (data.turnIndex + (dir * steps)) % data.playerOrder.length;
+            if (nextIdx < 0) nextIdx += data.playerOrder.length;
+            const targetUserKey = data.playerOrder[nextIdx];
+            let currentDeck = data.deck || [], currentDiscard = [...data.discardPile, ...cardsWithRotation], drawn = [];
+            for (let k = 0; k < newlyAddedAcc; k++) {
+                if (currentDeck.length === 0) {
+                    if (currentDiscard.length <= 1) break;
+                    const top = currentDiscard.pop();
+                    currentDeck = currentDiscard.sort(() => Math.random() - 0.5);
+                    currentDiscard = [top];
+                }
+                drawn.push(currentDeck.shift());
+            }
+            let targetHand = data.hands[targetUserKey] || [];
+            updates[`ongame_room/${currentRoomId}/hands/${targetUserKey}`] = sortUnoHandArray([...targetHand, ...drawn]);
+            updates[`ongame_room/${currentRoomId}/deck`] = currentDeck;
+            updates[`ongame_room/${currentRoomId}/discardPile`] = currentDiscard;
+            steps += 1;
+            updates[`ongame_room/${currentRoomId}/accumulatedDraw`] = 0;
+        } else {
+            acc += newlyAddedAcc;
+            updates[`ongame_room/${currentRoomId}/accumulatedDraw`] = acc;
+            updates[`ongame_room/${currentRoomId}/discardPile`] = [...data.discardPile, ...cardsWithRotation];
+        }
+
+        let nextIdx = (data.turnIndex + (dir * steps)) % data.playerOrder.length;
+        if (nextIdx < 0) nextIdx += data.playerOrder.length;
+        updates[`ongame_room/${currentRoomId}/turnIndex`] = nextIdx;
+        updates[`ongame_room/${currentRoomId}/direction`] = dir;
+        updates[`ongame_room/${currentRoomId}/currentColor`] = nc;
+        if (newHand.length === 0) {
+            updates[`ongame_room/${currentRoomId}/gameState`] = 'ended';
+            updates[`ongame_room/${currentRoomId}/winner`] = currentUserKey;
+        }
+        await update(ref(db), updates);
+        unoSelectedIndices = [];
+        unoIsProcessing = false;
+    }
+
+    window.unoDrawCardClick = async () => {
+        if (unoIsProcessing || !roomDataCache) return;
+        const data = roomDataCache;
+        const isMyTurn = (data.playerOrder[data.turnIndex] === currentUserKey);
+        if (isMyTurn && data.accumulatedDraw > 0) { unoPassTurn(); return; }
+        if (!isMyTurn) return;
+        let deck = [...(data.deck || [])], discard = [...(data.discardPile || [])];
+        if (deck.length === 0) {
+            if (discard.length <= 1) return alert("沒牌了！");
+            const top = discard.pop();
+            deck = discard.sort(() => Math.random() - 0.5);
+            discard = [top];
+            await update(ref(db, `ongame_room/${currentRoomId}`), { discardPile: discard, deck: deck });
+        }
+        runTransaction(ref(db, `ongame_room/${currentRoomId}/deck`), (currentDeck) => {
+            if (!currentDeck || currentDeck.length === 0) return currentDeck;
+            currentDeck.shift();
+            return currentDeck;
+        }).then((result) => {
+            if (result.committed) {
+                const card = (data.deck || [])[0];
+                showUnoDrawModal(card);
+            }
+        });
+    };
+
+    function showUnoDrawModal(card) {
+        unoPendingDrawnCard = card;
+        const modal = document.getElementById('uno-draw-modal');
+        const content = document.getElementById('uno-drawn-card-placeholder');
+        const msg = document.getElementById('uno-draw-msg');
+        const actions = document.getElementById('uno-draw-actions');
+        content.innerHTML = "";
+        content.appendChild(createUnoCardDOM(card));
+        const data = roomDataCache;
+        const top = data.discardPile[data.discardPile.length - 1];
+        const isWild = (card.color === 'black');
+        const colorMatch = (card.color === data.currentColor);
+        const valMatch = (card.value === top.value);
+        const playable = (isWild || colorMatch || valMatch);
+        actions.innerHTML = "";
+        if (playable) {
+            msg.innerText = "這張牌可以打出！";
+            const btnKeep = document.createElement('button');
+            btnKeep.className = "btn-sm";
+            btnKeep.style.background = "#64748b";
+            btnKeep.innerText = "收下";
+            btnKeep.onclick = () => unoPlayDrawnCard(false);
+            const btnPlay = document.createElement('button');
+            btnPlay.className = "btn-sm btn-green";
+            btnPlay.innerText = "丟出";
+            btnPlay.onclick = () => unoPlayDrawnCard(true);
+            actions.appendChild(btnKeep);
+            actions.appendChild(btnPlay);
+        } else {
+            msg.innerText = " ";
+            const btnKeep = document.createElement('button');
+            btnKeep.className = "btn-sm";
+            btnKeep.style.background = "#64748b";
+            btnKeep.innerText = "收下";
+            btnKeep.onclick = () => unoPlayDrawnCard(false);
+            actions.appendChild(btnKeep);
+        }
+        modal.classList.remove('hidden');
+    }
+
+    window.unoPlayDrawnCard = (playIt) => {
+        document.getElementById('uno-draw-modal').classList.add('hidden');
+        const card = unoPendingDrawnCard;
+        unoPendingDrawnCard = null;
+        const data = roomDataCache;
+        if (playIt) {
+            if (card.color === 'black') {
+                unoPendingPlayCards = { indices: [], cards: [card], fromDraw: true };
+                document.getElementById('uno-color-modal').classList.remove('hidden');
+            } else finishUnoPlayDrawn(card, null);
+        } else {
+            const newHand = sortUnoHandArray([...data.hands[currentUserKey], card]);
+            let nextIdx = (data.turnIndex + data.direction) % data.playerOrder.length;
+            if (nextIdx < 0) nextIdx += data.playerOrder.length;
+            update(ref(db, `ongame_room/${currentRoomId}`), {
+                [`hands/${currentUserKey}`]: newHand,
+                turnIndex: nextIdx,
+                lastAction: `${data.users[currentUserKey].name} 抽了一張牌`
+            }).then(() => { unoSelectedIndices = []; renderUnoGame(roomDataCache); });
+        }
+    };
+
+    async function finishUnoPlayDrawn(card, wildColor) {
+        const data = roomDataCache;
+        const updates = {};
+        let dir = data.direction, steps = 1, acc = data.accumulatedDraw, newlyAddedAcc = 0;
+        let actionMsg = "";
+        const myNameInGame = data.users[currentUserKey].name;
+        if (card.type === 'reverse') { if (data.playerOrder.length === 2) steps += 1; else dir *= -1; actionMsg = `${myNameInGame} 進行了迴轉！`; }
+        if (card.type === 'skip') { steps += 1; let ti = (data.turnIndex + dir) % data.playerOrder.length; if (ti < 0) ti += data.playerOrder.length; actionMsg = `${myNameInGame} 禁止了 ${data.users[data.playerOrder[ti]].name}！`; }
+        if (card.type === 'draw2') { newlyAddedAcc += 2; let ti = (data.turnIndex + dir) % data.playerOrder.length; if (ti < 0) ti += data.playerOrder.length; actionMsg = `${myNameInGame} 讓 ${data.users[data.playerOrder[ti]].name} 多了 2 張牌`; }
+        if (card.type === 'wild4') { newlyAddedAcc += 4; let ti = (data.turnIndex + dir) % data.playerOrder.length; if (ti < 0) ti += data.playerOrder.length; const colorMap = {red:'紅色',blue:'藍色',green:'綠色',yellow:'黃色'}; actionMsg = `${myNameInGame} 讓 ${data.users[data.playerOrder[ti]].name} 多了 4 張牌 並選取了 ${colorMap[wildColor]}`; }
+        if (!actionMsg) actionMsg = `${myNameInGame} 打出了 ${card.value}`;
+        updates[`ongame_room/${currentRoomId}/lastAction`] = actionMsg;
+        const cardWithRotation = { ...card, rotation: card.rotation || (Math.random()*20-10).toFixed(1) };
+        if (newlyAddedAcc > 0 && !(data.settings && data.settings.stack)) {
+            let nextIdx = (data.turnIndex + (dir * steps)) % data.playerOrder.length;
+            if (nextIdx < 0) nextIdx += data.playerOrder.length;
+            const targetUserKey = data.playerOrder[nextIdx];
+            let currentDeck = data.deck || [], currentDiscard = [...data.discardPile, cardWithRotation], drawn = [];
+            for (let k = 0; k < newlyAddedAcc; k++) {
+                if (currentDeck.length === 0) { if (currentDiscard.length <= 1) break; const top = currentDiscard.pop(); currentDeck = currentDiscard.sort(() => Math.random() - 0.5); currentDiscard = [top]; }
+                drawn.push(currentDeck.shift());
+            }
+            updates[`ongame_room/${currentRoomId}/hands/${targetUserKey}`] = sortUnoHandArray([...(data.hands[targetUserKey]||[]), ...drawn]);
+            updates[`ongame_room/${currentRoomId}/deck`] = currentDeck;
+            updates[`ongame_room/${currentRoomId}/discardPile`] = currentDiscard;
+            steps += 1;
+            updates[`ongame_room/${currentRoomId}/accumulatedDraw`] = 0;
+        } else {
+            acc += newlyAddedAcc;
+            updates[`ongame_room/${currentRoomId}/accumulatedDraw`] = acc;
+            updates[`ongame_room/${currentRoomId}/discardPile`] = [...data.discardPile, cardWithRotation];
+        }
+        let nextIdx = (data.turnIndex + (dir * steps)) % data.playerOrder.length;
+        if (nextIdx < 0) nextIdx += data.playerOrder.length;
+        let nc = wildColor || card.color;
+        updates[`ongame_room/${currentRoomId}/turnIndex`] = nextIdx;
+        updates[`ongame_room/${currentRoomId}/direction`] = dir;
+        updates[`ongame_room/${currentRoomId}/currentColor`] = nc;
+        await update(ref(db), updates);
+        unoSelectedIndices = [];
+        renderUnoGame(roomDataCache);
+    }
+
+    window.unoPassTurn = async () => {
+        const data = roomDataCache;
+        const acc = data.accumulatedDraw;
+        const myNameInGame = data.users[currentUserKey].name;
+        if (acc > 0) {
+            let deck = [...(data.deck||[])], discard = [...(data.discardPile||[])], drawn = [];
+            for (let i = 0; i < acc; i++) {
+                if (deck.length === 0) { if (discard.length <= 1) break; const top = discard.pop(); deck = discard.sort(() => Math.random() - 0.5); discard = [top]; }
+                drawn.push(deck.shift());
+            }
+            const newHand = sortUnoHandArray([...data.hands[currentUserKey], ...drawn]);
+            let nextIdx = (data.turnIndex + data.direction) % data.playerOrder.length;
+            if (nextIdx < 0) nextIdx += data.playerOrder.length;
+            await update(ref(db, `ongame_room/${currentRoomId}`), {
+                [`hands/${currentUserKey}`]: newHand, deck, discardPile: discard,
+                accumulatedDraw: 0, turnIndex: nextIdx,
+                lastAction: `${myNameInGame} 罰抽了 ${acc} 張牌`
+            });
+            unoSelectedIndices = [];
+            renderUnoGame(roomDataCache);
+        } else unoDrawCardClick();
+    };
+
+    window.unoResetGame = () => {
+        update(ref(db, `ongame_room/${currentRoomId}`), {
+            gameState: 'waiting', hands: {}, discardPile: [], accumulatedDraw: 0, lastAction: "準備重新開始"
+        });
+    };
+
+    function unoGenerateDeck() {
+        const colors = ['red','blue','green','yellow'];
+        let d = [];
+        colors.forEach(c => {
+            d.push({ type: 'n', color: c, value: '0' });
+            for (let i = 1; i <= 9; i++) { d.push({ type: 'n', color: c, value: String(i) }); d.push({ type: 'n', color: c, value: String(i) }); }
+            ['skip','reverse','draw2'].forEach(t => { d.push({ type: t, color: c, value: t }); d.push({ type: t, color: c, value: t }); });
+        });
+        for (let i = 0; i < 4; i++) { d.push({ type: 'wild', color: 'black', value: 'wild' }); d.push({ type: 'wild4', color: 'black', value: 'wild4' }); }
+        return d.sort(() => Math.random() - 0.5);
+    }
+
+    function showUnoAnim() {
+        const el = document.getElementById('uno-shout');
+        if (!el) return;
+        el.style.animation = 'none';
+        el.offsetHeight;
+        el.style.animation = 'unoShoutPop 1.5s forwards';
+    }
+
+    window.openUnoSettings = () => {
+        document.getElementById('uno-setting-nickname').value = myName;
+        document.getElementById('uno-settings-modal').classList.remove('hidden');
+    };
+    window.closeUnoSettings = () => document.getElementById('uno-settings-modal').classList.add('hidden');
+    window.updateUnoNickname = async () => {
+        const newName = (document.getElementById('uno-setting-nickname').value || '').trim();
+        if (!newName) return alert("暱稱不能為空！");
+        myName = newName;
+        localStorage.setItem('playerName', myName);
+        if (currentRoomId && currentUserKey && roomDataCache && roomDataCache.type === 'uno') {
+            await update(ref(db, `ongame_room/${currentRoomId}/users/${currentUserKey}`), { name: myName });
+        }
+        alert("暱稱已更改為: " + myName);
+    };
+    window.updateUnoScale = (val) => {
+        document.documentElement.style.setProperty('--uno-card-w', (70 * val) + 'px');
+        document.documentElement.style.setProperty('--uno-card-h', (105 * val) + 'px');
+        if (currentRoomId && roomDataCache && roomDataCache.type === 'uno') renderUnoHand(roomDataCache);
+    };
+
     // --- 棋盤遊戲渲染 (圈圈叉叉/四連棋) ---
     function renderBoardGame(data) {
         document.getElementById('liar-wrapper').classList.add('hidden');
+        document.getElementById('uno-wrapper').classList.add('hidden');
         document.getElementById('btn-undo').classList.remove('hidden');
         document.getElementById('btn-restart-gen').classList.remove('hidden');
         document.getElementById('status').classList.remove('hidden');
@@ -1105,6 +1879,7 @@
     function renderLiarGame(data) {
         document.getElementById('ttt-board').classList.add('hidden');
         document.getElementById('c4-game-wrapper').classList.add('hidden');
+        document.getElementById('uno-wrapper').classList.add('hidden');
         document.getElementById('btn-undo').classList.add('hidden');
         document.getElementById('btn-restart-gen').classList.add('hidden');
         document.getElementById('status').classList.add('hidden');
@@ -2030,13 +2805,20 @@
         document.getElementById(id).classList.remove('hidden');
     };
     
-    // 離開房間：如果是騙子桌遊，設為 offline；其他直接刪除
+    // 離開房間：騙子桌遊設 status offline，UNO 設 online false，其他直接刪除
     window.leaveRoom = () => {
-        if (currentRoomId && currentUserKey && isLiarGame) {
-             update(ref(db, `ongame_room/${currentRoomId}/users/${currentUserKey}`), { status: 'offline' })
-             .then(() => location.reload());
+        if (currentRoomId && currentUserKey) {
+            if (isLiarGame) {
+                update(ref(db, `ongame_room/${currentRoomId}/users/${currentUserKey}`), { status: 'offline' })
+                    .then(() => location.reload());
+            } else if (roomDataCache && roomDataCache.type === 'uno') {
+                update(ref(db, `ongame_room/${currentRoomId}/users/${currentUserKey}`), { online: false })
+                    .then(() => location.reload());
+            } else {
+                location.reload();
+            }
         } else {
-             location.reload();
+            location.reload();
         }
     };
     
