@@ -643,6 +643,35 @@
             100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
         }
 
+        /* 新增/修改：玩家列表的水平滾動 GUI */
+        .uno-opponents-bar, .opponents-row {
+            display: flex !important;
+            justify-content: flex-start !important;
+            gap: 12px;
+            width: 100%;
+            overflow-x: auto !important; 
+            flex-wrap: nowrap !important;
+            scroll-behavior: smooth;     
+            padding-bottom: 12px;        
+            box-sizing: border-box;
+        }
+
+        /* 滾動條美化 */
+        .uno-opponents-bar::-webkit-scrollbar, .opponents-row::-webkit-scrollbar {
+            height: 8px;
+        }
+        .uno-opponents-bar::-webkit-scrollbar-track, .opponents-row::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        .uno-opponents-bar::-webkit-scrollbar-thumb, .opponents-row::-webkit-scrollbar-thumb {
+            background: #6366f1;
+            border-radius: 4px;
+        }
+        .uno-opponents-bar::-webkit-scrollbar-thumb:hover, .opponents-row::-webkit-scrollbar-thumb:hover {
+            background: #a855f7;
+        }
+
     </style>
 </head>
 <body>
@@ -2862,6 +2891,56 @@
     });
     p2Picker.addEventListener('change', () => {
         if(currentRoomId && roomDataCache.type === 'c4') update(ref(db, `ongame_room/${currentRoomId}`), { p2Color: p2Picker.value });
+    });
+
+    // 自動水平滾動對手列，保持當前玩家在視窗中
+    window.addEventListener('DOMContentLoaded', () => {
+        function setupAutoScroll(containerSelector) {
+            const checkExist = setInterval(() => {
+                const container = document.querySelector(containerSelector);
+                if (container) {
+                    clearInterval(checkExist);
+                    let isUserScrolling = false;
+                    let scrollTimeout;
+
+                    container.addEventListener('scroll', () => {
+                        isUserScrolling = true;
+                        clearTimeout(scrollTimeout);
+                        scrollTimeout = setTimeout(() => {
+                            isUserScrolling = false;
+                        }, 3000);
+                    });
+
+                    const observer = new MutationObserver((mutations) => {
+                        if (isUserScrolling) return;
+
+                        for (const mutation of mutations) {
+                            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                                if (mutation.target.classList && mutation.target.classList.contains('active')) {
+                                    mutation.target.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                                }
+                            } 
+                            else if (mutation.type === 'childList') {
+                                const activeEl = container.querySelector('.active');
+                                if (activeEl) {
+                                    activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                                }
+                            }
+                        }
+                    });
+
+                    observer.observe(container, { 
+                        attributes: true, 
+                        childList: true, 
+                        subtree: true, 
+                        attributeFilter: ['class'] 
+                    });
+                }
+            }, 1000);
+        }
+
+        setupAutoScroll('.uno-opponents-bar');
+        setupAutoScroll('.opponents-row');
     });
 
 </script>
