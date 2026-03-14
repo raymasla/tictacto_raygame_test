@@ -689,6 +689,8 @@
     <button class="menu-btn btn-c4" onclick="showCreateRoom('c4')">創立 四連棋 🔴🔵</button>
     <button class="menu-btn btn-liar" onclick="showCreateRoom('liar')">創立 騙子桌遊 🔫🃏</button>
     <button class="menu-btn" style="background: linear-gradient(135deg, #f59e0b, #ef4444);" onclick="showCreateRoom('uno')">創立 UNO 🔄🃏</button>
+    <button class="menu-btn" style="background: linear-gradient(to right, #0000FF 0%, #FF0000 100%); color: white; border: none; padding: 10px 25px; border-radius: 8px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" onclick="window.open('https://reurl.cc/vkmlg1', '_blank')">
+    遊玩♘西洋棋♖跳棋⚫
     <hr style="border: 0; height: 1px; background: rgba(255,255,255,0.2); margin: 15px 0;">
     <button class="menu-btn btn-purple" onclick="window.open('https://raymasla.github.io/whois/')">
     前往 誰是臥底🕵️
@@ -1017,70 +1019,121 @@
         updateStatsUI();
     });
 
-    // --- 初始化：顯示所有房間 ---
+    // --- 初始化：顯示所有房間（包含 ongame_room + chsgame_room） ---
     let totalInGameCount = 0;
-    onValue(ref(db, 'ongame_room'), (snapshot) => {
+    let ongameRooms = null;
+    let chsRooms = null;
+
+    function renderAllRooms() {
         const container = document.getElementById('allRoomsContainer');
+        if (!container) return;
         container.innerHTML = "";
-        const rooms = snapshot.val();
         totalInGameCount = 0;
 
-        if (!rooms) { 
-            container.innerHTML = "<p style='color:#94a3b8; margin-top:20px;'>目前沒有房間，來開一個吧！</p>"; 
+        const hasOngame = ongameRooms && Object.keys(ongameRooms).length > 0;
+        const hasChs = chsRooms && Object.keys(chsRooms).length > 0;
+
+        if (!hasOngame && !hasChs) {
+            container.innerHTML = "<p style='color:#94a3b8; margin-top:20px;'>目前沒有房間，來開一個吧！</p>";
             updateStatsUI();
-            return; 
+            return;
         }
-        
-        Object.entries(rooms).reverse().forEach(([id, r]) => {
-            let userCount = 0;
-            if (r.users) {
-                if (r.type === 'uno') userCount = Object.values(r.users).filter(u => u.online).length;
-                else userCount = Object.values(r.users).filter(u => u.status !== 'offline').length;
-            }
-            totalInGameCount += userCount;
 
-            let typeName = '❌一般圈叉';
-            if (r.type === 'c4') typeName = '🔵重力四連';
-            if (r.type === 'ttt-infinite') typeName = '♾️無限圈叉';
-            if (r.type === 'liar') typeName = '🔫騙子桌遊';
-            if (r.type === 'uno') typeName = '🃏 UNO';
+        // 原本的 ongame_room 房間
+        if (hasOngame) {
+            Object.entries(ongameRooms).reverse().forEach(([id, r]) => {
+                let userCount = 0;
+                if (r.users) {
+                    if (r.type === 'uno') userCount = Object.values(r.users).filter(u => u.online).length;
+                    else userCount = Object.values(r.users).filter(u => u.status !== 'offline').length;
+                }
+                totalInGameCount += userCount;
 
-            const hasPass = r.password && r.password !== "";
-            const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
-            const passwordArg = hasPass ? r.password : ""; 
-            
-            let statusBadge = '<span class="status-badge status-wait">等待中</span>';
-            if (r.status === 'playing' || (r.turn > 0 && r.type !== 'liar') || (r.type === 'uno' && r.gameState === 'playing')) {
-                statusBadge = '<span class="status-badge status-play">遊戲中</span>';
-            }
+                let typeName = '❌一般圈叉';
+                if (r.type === 'c4') typeName = '🔵重力四連';
+                if (r.type === 'ttt-infinite') typeName = '♾️無限圈叉';
+                if (r.type === 'liar') typeName = '🔫騙子桌遊';
+                if (r.type === 'uno') typeName = '🃏 UNO';
 
-            let metaInfo = "";
-            if (r.type === 'liar') {
-                metaInfo = `人數: ${userCount}`;
-                if (r.anytimeLiar) metaInfo += ` | 隨時抓謊ON`;
-            } else if (r.type === 'uno') {
-                metaInfo = `人數: ${userCount}`;
-                if (r.settings) metaInfo += ` | 連出:${r.settings.chain?'ON':'OFF'} 疊加:${r.settings.stack?'ON':'OFF'}`;
-            } else {
-                const rows = r.rows || 3;
-                const cols = r.cols || 3;
-                metaInfo = `大小: ${rows}x${cols} | 人數: ${userCount}`;
-            }
+                const hasPass = r.password && r.password !== "";
+                const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
+                const passwordArg = hasPass ? r.password : ""; 
+                
+                let statusBadge = '<span class="status-badge status-wait">等待中</span>';
+                if (r.status === 'playing' || (r.turn > 0 && r.type !== 'liar') || (r.type === 'uno' && r.gameState === 'playing')) {
+                    statusBadge = '<span class="status-badge status-play">遊戲中</span>';
+                }
 
-            const div = document.createElement('div');
-            div.className = 'room-item';
-            div.innerHTML = `
-                <div class="room-info">
-                    <span class="room-name">${typeName} | ${r.name} ${lockIcon} ${statusBadge}</span>
-                    <div class="room-meta">${metaInfo}</div>
-                </div>
-                <div>
-                    <button class="btn-sm btn-green" onclick="attemptJoin('${id}', '${passwordArg}')">加入</button>
-                    <button class="btn-sm btn-red" onclick="deleteRoom('${id}')">刪除</button>
-                </div>`;
-            container.appendChild(div);
-        });
+                let metaInfo = "";
+                if (r.type === 'liar') {
+                    metaInfo = `人數: ${userCount}`;
+                    if (r.anytimeLiar) metaInfo += ` | 隨時抓謊ON`;
+                } else if (r.type === 'uno') {
+                    metaInfo = `人數: ${userCount}`;
+                    if (r.settings) metaInfo += ` | 連出:${r.settings.chain?'ON':'OFF'} 疊加:${r.settings.stack?'ON':'OFF'}`;
+                } else {
+                    const rows = r.rows || 3;
+                    const cols = r.cols || 3;
+                    metaInfo = `大小: ${rows}x${cols} | 人數: ${userCount}`;
+                }
+
+                const div = document.createElement('div');
+                div.className = 'room-item';
+                div.innerHTML = `
+                    <div class="room-info">
+                        <span class="room-name">${typeName} | ${r.name} ${lockIcon} ${statusBadge}</span>
+                        <div class="room-meta">${metaInfo}</div>
+                    </div>
+                    <div>
+                        <button class="btn-sm btn-green" onclick="attemptJoin('${id}', '${passwordArg}')">加入</button>
+                        <button class="btn-sm btn-red" onclick="deleteRoom('${id}')">刪除</button>
+                    </div>`;
+                container.appendChild(div);
+            });
+        }
+
+        // 新增的 chsgame_room 房間（點加入後前往外部棋類大廳）
+        if (hasChs) {
+            Object.entries(chsRooms).reverse().forEach(([id, r]) => {
+                let userCount = 0;
+                if (r.users) {
+                    userCount = Object.values(r.users).filter(u => u.status !== 'offline').length;
+                }
+                totalInGameCount += userCount;
+
+                const hasPass = r.password && r.password !== "";
+                const lockIcon = hasPass ? '<span class="lock-icon">🔒</span>' : '';
+                const passwordArg = hasPass ? r.password : "";
+
+                const typeName = '♟️西洋棋 & 跳棋';
+                const statusBadge = '<span class="status-badge status-wait">等待中</span>';
+                const metaInfo = `人數: ${userCount}`;
+
+                const div = document.createElement('div');
+                div.className = 'room-item';
+                div.innerHTML = `
+                    <div class="room-info">
+                        <span class="room-name">${typeName} | ${r.name || '房間'} ${lockIcon} ${statusBadge}</span>
+                        <div class="room-meta">${metaInfo}</div>
+                    </div>
+                    <div>
+                        <button class="btn-sm btn-green" onclick="joinChsRoom('${id}', '${passwordArg}')">加入</button>
+                    </div>`;
+                container.appendChild(div);
+            });
+        }
+
         updateStatsUI();
+    }
+
+    onValue(ref(db, 'ongame_room'), (snapshot) => {
+        ongameRooms = snapshot.val() || {};
+        renderAllRooms();
+    });
+
+    onValue(ref(db, 'chsgame_room'), (snapshot) => {
+        chsRooms = snapshot.val() || {};
+        renderAllRooms();
     });
 
     function updateStatsUI() {
@@ -1088,6 +1141,15 @@
         document.getElementById('inGameCount').innerText = totalInGameCount;
         document.getElementById('lobbyCount').innerText = lobbyCount;
     }
+
+    // chsgame_room 房間加入：開啟外部棋類大廳網址
+    window.joinChsRoom = (id, correctPass) => {
+        if (correctPass && correctPass !== "undefined" && correctPass !== "") {
+            const input = prompt("此房間有密碼，請輸入：");
+            if (input !== correctPass) { alert("密碼錯誤！"); return; }
+        }
+        window.open('https://raymasla.github.io/chs/', '_blank');
+    };
 
     window.attemptJoin = async (id, correctPass) => {
         if (correctPass && correctPass !== "undefined" && correctPass !== "") {
